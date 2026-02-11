@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ruleset
+  name="Metadata Apex Custom Category"
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd"
+>
+
+    <description>
+       These are Apex custom rules 
+    </description>
+
+    <!-- Your rules will come here -->
+
+    <!-- CUSTOM APEX RULES -->
+
+    <rule
+    name="AvoidProductionDebugLogs"
+    language="apex"
+    message="Avoid leaving System.debug() statments in code as they negativly influence performance."
+    class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule"
+  >
+        <priority>3</priority>
+        <properties>
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+                        //MethodCallExpression[@FullMethodName='System.debug'][count(*)=2]
+                    ]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+    <rule
+    name="CatchCreateExceptionLog"
+    language="apex"
+    message="Catch Statement should capture Exception Log and publish"
+    class="net.sourceforge.pmd.lang.apex.rule.ApexXPathRule"
+  >
+        <priority>3</priority>
+        <properties>
+            <property name="version" value="2.0" />
+            <property name="xpath">
+                <value>
+                    <![CDATA[
+                    if(//CatchBlockStatement/BlockStatement/ExpressionStatement/MethodCallExpression/ReferenceExpression[contains(@Image, "EventBus")]) 
+                    then(//CatchBlockStatement/BlockStatement/ExpressionStatement/MethodCallExpression/ReferenceExpression[@Image = "EventBus"][count(@Image = "EventBus") < 0])
+                    else(//UserClass[not(ends-with(pmd:fileName(),"Test.cls"))]//CatchBlockStatement/BlockStatement[count(*) > 0])
+                    ]]>
+                </value>
+            </property>
+        </properties>
+    </rule>
+
+</ruleset>

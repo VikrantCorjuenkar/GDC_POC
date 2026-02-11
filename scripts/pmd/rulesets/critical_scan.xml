@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ruleset
+  name="KIA Critical Rules"
+  xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd"
+>
+
+    <description>
+        These are the critical set of rules we will trigger as part of the CI validation before commit. 
+        We can edit this list and add future rules to make validation more strict
+    </description>
+
+    <!-- Apex Rules -->
+
+    <rule
+    ref="category/apex/performance.xml/OperationWithLimitsInLoop"
+    message="De NOT define DML in a loopset"
+  >
+        <priority>1</priority>
+    </rule>
+
+    <rule
+    ref="category/apex/bestpractices.xml/ApexUnitTestClassShouldHaveAsserts"
+  >
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/errorprone.xml/AvoidDirectAccessTriggerMap">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/errorprone.xml/AvoidHardcodingId">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/errorprone.xml/InaccessibleAuraEnabledGetter">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/errorprone.xml/TestMethodsMustBeInTestClasses">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexSOQLInjection">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexXSSFromURLParam">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexBadCrypto">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexDangerousMethods">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/bestpractices.xml/UnusedLocalVariable">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexCRUDViolation">
+        <priority>1</priority>
+    </rule>
+
+    <rule ref="category/apex/security.xml/ApexSharingViolations">
+        <priority>1</priority>
+    </rule>
+
+    <rule
+    ref="category/apex/bestpractices.xml/ApexAssertionsShouldIncludeMessage"
+  >
+        <priority>1</priority>
+    </rule>
+    
+</ruleset>

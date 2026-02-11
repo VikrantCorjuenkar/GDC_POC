@@ -1,0 +1,20 @@
+ SELECT
+  Name,
+  gdc_ms_ContentId__c,
+  gdc_ms_IsActive__c,
+  gdc_ms_Accordion_Heading__c,
+  gdc_ms_Contains_Accordion__c,
+  (
+  SELECT
+    gdc_ms_Body_Content__c,
+    gdc_ms_Contains_iframe__c,
+    gdc_ms_Header_Content__c,
+    gdc_ms_iframe_Link__c,
+    gdc_ms_IsActive__c,
+    gdc_ms_ParentId__c,
+    gdc_ms_Sort_Number__c
+  FROM
+    Site_Content__r
+  )
+FROM
+  gdc_ms_Site_Content_Page__c
