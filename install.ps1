@@ -9,7 +9,7 @@
     - PowerShell Core (pwsh)
     - Node.js
     - Salesforce CLI (sf)
-    - Java (for PMD scans)
+    - Java
     - Salesforce CLI plugins (@salesforce/sfdx-scanner, lightning-flow-scanner)
     Extracts scripts.zip and optionally runs Submit-PR.ps1
 
@@ -113,7 +113,7 @@ catch {
 Write-Host "  ✅ Java Ready" -ForegroundColor Green
 
 # ------------------------------
-# 6. SALESFORCE PLUGINS
+# 6. SALESFORCE CLI PLUGINS
 # ------------------------------
 Write-Host "[6/7] Ensuring Salesforce CLI plugins are up to date..." -ForegroundColor Cyan
 
@@ -124,23 +124,13 @@ function Ensure-Plugin {
 
     $exists = sf plugins 2>$null | Select-String $PluginName
 
-    if ($exists) {
-        Write-Host "  🔄 Updating $PluginName..." -ForegroundColor Yellow
-        sf plugins update $PluginName 2>$null
-        $pluginResults += [PSCustomObject]@{
-            Plugin = $PluginName
-            Action = "Updated"
-            Status = "Success"
-        }
-    }
-    else {
-        Write-Host "  📦 Installing $PluginName..." -ForegroundColor Yellow
-        sf plugins install $PluginName 2>$null
-        $pluginResults += [PSCustomObject]@{
-            Plugin = $PluginName
-            Action = "Installed"
-            Status = "Success"
-        }
+    Write-Host "  🔄 Ensuring latest version of $PluginName..." -ForegroundColor Yellow
+    sf plugins install $PluginName --force 2>$null
+
+    $pluginResults += [PSCustomObject]@{
+        Plugin = $PluginName
+        Action = $( if ($exists) { "Reinstalled (Updated)" } else { "Installed" } )
+        Status = "Success"
     }
 }
 
@@ -152,6 +142,7 @@ $sfConfigDir = if ($env:XDG_CONFIG_HOME) {
 }
 
 $allowlistPath = Join-Path $sfConfigDir "unsignedPluginAllowList.json"
+
 if (-not (Test-Path $sfConfigDir)) {
     New-Item -ItemType Directory -Force -Path $sfConfigDir | Out-Null
 }
@@ -177,25 +168,32 @@ Ensure-Plugin "lightning-flow-scanner"
 Write-Host "[7/7] Extracting scripts.zip..." -ForegroundColor Cyan
 
 $zipPath = Join-Path $RepoRoot "scripts.zip"
+
 if (-not (Test-Path $zipPath)) {
-    Write-Host "  ❌ scripts.zip not found." -ForegroundColor Red
-    exit 1
+    if (Test-Path (Join-Path $RepoRoot "scripts")) {
+        Write-Host "  ℹ️ scripts.zip not found, but scripts folder already exists. Skipping extraction." -ForegroundColor Yellow
+    }
+    else {
+        Write-Host "  ❌ scripts.zip not found and scripts folder missing." -ForegroundColor Red
+        exit 1
+    }
 }
+else {
+    $tempExtract = Join-Path $RepoRoot ".install-temp"
+    if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
 
-$tempExtract = Join-Path $RepoRoot ".install-temp"
-if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
+    Expand-Archive -Path $zipPath -DestinationPath $tempExtract -Force
 
-Expand-Archive -Path $zipPath -DestinationPath $tempExtract -Force
+    $extracted = Join-Path $tempExtract "scripts"
+    if (-not (Test-Path $extracted)) {
+        $extracted = Join-Path $tempExtract "Scripts"
+    }
 
-$extracted = Join-Path $tempExtract "scripts"
-if (-not (Test-Path $extracted)) {
-    $extracted = Join-Path $tempExtract "Scripts"
+    Move-Item -Path $extracted -Destination $RepoRoot -Force
+    Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
+
+    Write-Host "  ✅ Scripts Extracted" -ForegroundColor Green
 }
-
-Move-Item -Path $extracted -Destination $RepoRoot -Force
-Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
-
-Write-Host "  ✅ Scripts Extracted" -ForegroundColor Green
 
 # ------------------------------
 # FINAL SUMMARY
@@ -207,11 +205,30 @@ Write-Host "========================================" -ForegroundColor Cyan
 
 $summary = @()
 
-$summary += [PSCustomObject]@{ Component="Git"; Status=(if (Test-CommandExists "git") {"Available"} else {"Missing"}) }
-$summary += [PSCustomObject]@{ Component="PowerShell (pwsh)"; Status=(if (Test-CommandExists "pwsh") {"Available"} else {"Missing"}) }
-$summary += [PSCustomObject]@{ Component="Node.js"; Status=(if (Test-CommandExists "node") {"Available"} else {"Missing"}) }
-$summary += [PSCustomObject]@{ Component="Salesforce CLI"; Status=(if (Test-CommandExists "sf") {"Available"} else {"Missing"}) }
-$summary += [PSCustomObject]@{ Component="Java"; Status=(if (Test-CommandExists "java") {"Available"} else {"Missing"}) }
+$summary += [PSCustomObject]@{
+    Component = "Git"
+    Status = $( if (Test-CommandExists "git") { "Available" } else { "Missing" } )
+}
+
+$summary += [PSCustomObject]@{
+    Component = "PowerShell (pwsh)"
+    Status = $( if (Test-CommandExists "pwsh") { "Available" } else { "Missing" } )
+}
+
+$summary += [PSCustomObject]@{
+    Component = "Node.js"
+    Status = $( if (Test-CommandExists "node") { "Available" } else { "Missing" } )
+}
+
+$summary += [PSCustomObject]@{
+    Component = "Salesforce CLI"
+    Status = $( if (Test-CommandExists "sf") { "Available" } else { "Missing" } )
+}
+
+$summary += [PSCustomObject]@{
+    Component = "Java"
+    Status = $( if (Test-CommandExists "java") { "Available" } else { "Missing" } )
+}
 
 $summary | Format-Table -AutoSize
 
