@@ -99,8 +99,6 @@ jobs:
             # We have defined custom Apex rules and custom XML Metadata rules that we should add as rules in PMD scanner
             - name: Apex Code + Metadata Best Practices scanning using PMD. This step will FAIL if there is any critical coding standards not met
               run: |
-                export HOME=/root
-
                 echo "Adding custom XML rules..."
                 sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml"
 
@@ -128,8 +126,6 @@ jobs:
             # Runs Flow Scan. This task will fail if there is any rule that is violated
             - name: Salesforce Flow Scan. This step will FAIL if there is any critical violation of governor limits hit in Flows
               run: |
-                export HOME=/root
-
                 if compgen -G "changed-sources/force-app/**/*.flow-meta.xml" > /dev/null; then
                   echo "Executing Flow Scan on changed flows..."
                   sf flow scan -d "changed-sources/force-app/"
@@ -141,8 +137,6 @@ jobs:
             # Runs ESLint rules. This task will fail if there is any rule that is violated.
             - name: LWC Best Practices scanning using ESLint. This step will FAIL if there is any critical coding standards not met
               run: |
-                export HOME=/root
-
                 npm dedupe
 
                 if compgen -G "changed-sources/force-app/**/*.js" > /dev/null; then
