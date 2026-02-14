@@ -4,7 +4,7 @@ public class HelloWorld {
         for (int i = 0; i<10; i++){
             system.debug([select id from acount]);
         }
-        return 'Hello World, please follow salesforce best practices ajdbajbdjkabd';
+        return 'Hello World, please follow salesforce best practices.';
 
     }
 }
