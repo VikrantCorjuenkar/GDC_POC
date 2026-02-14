@@ -94,10 +94,66 @@ jobs:
             # The .sarif file can later be uploaded to github, so that we can see the 
             # results of the scan directly from the PR.
 
-            - name: 'Scan code'
+            # Runs PMD ruleset. This task will fail if there is any rule that is violated.
+            # We need to update ~/.sfdx-scanner/Config.json to make sure PMD scans -meta.xml files
+            # We have defined custom Apex rules and custom XML Metadata rules that we should add as rules in PMD scanner
+            - name: Apex Code + Metadata Best Practices scanning using PMD. This step will FAIL if there is any critical coding standards not met
               run: |
-                  cd changed-sources
-                  sf scanner:run --format sarif --target './**/*.cls' --category "Design,Best Practices,Performance" --outfile 'apexScanResults.sarif'  
-                  cd ..
+                export HOME=/root
+
+                echo "Adding custom XML rules..."
+                sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml"
+
+                echo "Adding custom Apex rules..."
+                sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml"
+
+                echo "List of rules being used:"
+                sf scanner rule list
+
+                # Allow scanning of -meta.xml files
+                sed -i -e 's+"!\*\*/\*-meta.xml"+"\*\*/\*-meta.xml"+g' ~/.sfdx-scanner/Config.json || true
+
+                echo "Executing PMD Scan on changed files..."
+                if [ -d "changed-sources/force-app" ]; then
+                  sf scanner run \
+                    --target "changed-sources/force-app/" \
+                    --pmdconfig "./scripts/pmd/rulesets/critical_scan.xml" \
+                    --severity-threshold 1 \
+                    --engine pmd
+                else
+                  echo "No changed metadata to scan."
+                fi
+
+
+            # Runs Flow Scan. This task will fail if there is any rule that is violated
+            - name: Salesforce Flow Scan. This step will FAIL if there is any critical violation of governor limits hit in Flows
+              run: |
+                export HOME=/root
+
+                if compgen -G "changed-sources/force-app/**/*.flow-meta.xml" > /dev/null; then
+                  echo "Executing Flow Scan on changed flows..."
+                  sf flow scan -d "changed-sources/force-app/"
+                else
+                  echo "No Flow changes detected."
+                fi
+
+
+            # Runs ESLint rules. This task will fail if there is any rule that is violated.
+            - name: LWC Best Practices scanning using ESLint. This step will FAIL if there is any critical coding standards not met
+              run: |
+                export HOME=/root
+
+                npm dedupe
+
+                if compgen -G "changed-sources/force-app/**/*.js" > /dev/null; then
+                  echo "Executing ESLint Scan on changed LWC files..."
+                  sf scanner run \
+                    --target "changed-sources/force-app/**/*.js" \
+                    --eslintconfig "./scripts/eslint/.eslintrc.json" \
+                    --severity-threshold 1 \
+                    --engine eslint-lwc
+                else
+                  echo "No LWC changes detected."
+                fi
 
 
