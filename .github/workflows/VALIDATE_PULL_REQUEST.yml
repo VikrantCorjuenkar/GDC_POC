@@ -61,7 +61,7 @@ jobs:
             # Install Git Delta plugin (compatible with sf)
             - name: 'Installing sfdx-git-delta plugin'
               run: |
-                  sf plugins install sfdx-git-delta --force
+                  echo y | sf plugins install sfdx-git-delta
                   sf plugins
 
             # Install java as it is required for the next step
@@ -72,7 +72,7 @@ jobs:
 
             # Install SFDX scanner
             - name: 'Installing SFDX scanner'
-              run: sfdx plugins:install @salesforce/sfdx-scanner
+              run: sf plugins:install @salesforce/sfdx-scanner
 
 
             # We use SFDX Git Delta to create a directory with only the metadata that has changed.
