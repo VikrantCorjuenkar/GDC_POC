@@ -72,7 +72,7 @@ jobs:
 
             # Install SFDX scanner
             - name: 'Installing SFDX scanner'
-              run: sf plugins:install @salesforce/sfdx-scanner
+              run: echo y | sf plugins install @salesforce/sfdx-scanner
 
 
             # We use SFDX Git Delta to create a directory with only the metadata that has changed.
