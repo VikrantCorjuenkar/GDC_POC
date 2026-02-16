@@ -160,7 +160,7 @@ jobs:
               run: |
                 npm dedupe
 
-                npm ci
+                npm install
 
                 echo "Executing ESLint Scan on changed LWC files..."
                 sf scanner run \
