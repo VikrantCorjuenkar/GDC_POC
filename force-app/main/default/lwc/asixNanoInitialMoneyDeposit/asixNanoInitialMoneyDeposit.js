@@ -6,6 +6,7 @@ export default class AsixNanoInitialMoneyDeposit extends LightningElement {
     showSpinner = true;
     hasValidationError = true;
     imdAmount;
+    val1;
 
     @track errorMessages = [];
 
