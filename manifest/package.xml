@@ -1,40 +1,44 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Package xmlns="http://soap.sforce.com/2006/04/metadata">
 	<types>
-		<members>*</members>
+		<members>AxisNanoFetchAccountDetails</members>
+		<members>AxisNanoFetchAccountDetailsMockCallout</members>
+		<members>AxisNanoFetchAccountDetailsWrap</members>
+		<members>AxisNanoGenrateDocketTwoController</members>
+		<members>AxisNanoGetRecordDetails</members>
+		<members>AxisNanoIDFYIntegration</members>
+		<members>AxisNanoIMDPaymentCallback</members>
+		<members>AxisNanoIPAELKValidator</members>
+		<members>AxisNanoIncomeAssessmentGetApplicants</members>
+		<members>AxisNanoInitialMoneyDeposiController</members>
+		<members>AxisNanoInitiateEsignController</members>
+		<members>AxisNanoInstrumentDetailService</members>
+		<members>AxisNanoKFSController</members>
+		<members>AxisNanoLoanAppSharingHelper</members>
 		<name>ApexClass</name>
 	</types>
 	<types>
-		<members>*</members>
-		<name>ApexComponent</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexPage</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexTestSuite</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>ApexTrigger</name>
-	</types>
-	<types>
-		<members>*</members>
-		<name>AuraDefinitionBundle</name>
-	</types>
-	<types>
-		<members>AccountActive</members>
+		<members>AxisNanoFlowForRestrictMultiEmployment</members>
+		<members>AxisNanoSanctionLetterFlow</members>
+		<members>Axis_Nano_Generate_eSign_Application_Form</members>
+		<members>Initiate_eSign_Process_Nano</members>
+		<members>Nano_Change_Loan_Application_Owner</members>
+		<members>Nano_Loan_Application_Approval</members>
+		<members>SMLoanApplicationRejectionNano</members>
 		<name>Flow</name>
 	</types>
 	<types>
-		<members>*</members>
+		<members>applicationDocumentSummaryNano</members>
+		<members>asixNanoInitialMoneyDeposit</members>
+		<members>assignApproverForDeviationChildNano</members>
+		<members>axisCommercialDeviationNanoEnglish</members>
+		<members>axisNANOHunterDetailsTable</members>
+		<members>axisNANOLoanApplicantPosidexDetails</members>
+		<members>axisNANOLoanApplicationPosidexDetails</members>
+		<members>axisNANOQualityCheckTabs</members>
+		<members>axisNanoApplicantCreditScore</members>
+		<members>axisNanoApplicantCreditScoreEnglish</members>
 		<name>LightningComponentBundle</name>
 	</types>
-	<types>
-		<members>*</members>
-		<name>StaticResource</name>
-	</types>
-	<version>65.0</version>
+	<version>66.0</version>
 </Package>

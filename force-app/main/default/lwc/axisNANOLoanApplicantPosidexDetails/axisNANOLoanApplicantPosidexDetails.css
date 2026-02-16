@@ -1,0 +1,11 @@
+@media only screen and (min-width: 765px) {
+  .mobileview {
+    display: none;
+  }
+}
+
+@media only screen and (max-width: 765px) {
+  .desktopView {
+    display: none;
+  }
+}

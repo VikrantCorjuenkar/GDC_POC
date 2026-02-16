@@ -1,0 +1,35 @@
+.green-box {
+    margin-top: 20px; /* Adjust as needed for top margin */
+    text-align: center;
+    background-color: #3ca841; /* Green background color */
+    padding: 20px;
+    color: #000000; /* Text color */
+} 
+.yellow-box {
+    margin-top: 20px; /* Adjust as needed for top margin */
+    text-align: center;
+    background-color: #FFFF00; /* Green background color */
+    padding: 20px;
+    color: #000000;
+} 
+.red-box {
+    margin-top: 20px; /* Adjust as needed for top margin */
+    text-align: center;
+    background-color: #FF0000; /* Green background color */
+    padding: 20px;
+    color: #000000; /* Text color */
+} 
+.current-value {
+    bottom: -82px;
+    left: 50%;
+    font-weight: bold;
+}
+.cibil-title {
+    font-size: 24px;
+    font-weight: bold;
+}
+.right-align {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

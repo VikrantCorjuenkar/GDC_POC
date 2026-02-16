@@ -1,0 +1,244 @@
+<!--
+  @description       : 
+  @author            : ChangeMeIn@UserSettingsUnder.SFDoc
+  @group             : 
+  @last modified on  : 03-10-2024
+  @last modified by  : Amol
+-->
+<template>
+    <template if:true={showSpinner}>
+        <div class="slds-is-initial">
+            <lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+        </div>
+    </template>
+
+    <template if:false={showSpinner}>
+        <div class="slds-card__header slds-grid slds-gutters slds-wrap slds-card_boundary">
+            <div class="slds-col slds-size_12-of-12">
+                <div class="slds-card__header slds-grid slds-gutters slds-wrap">
+                    <div class="slds-col slds-size_6-of-12">
+                        <p
+                            if:true={isHunterInvokeEligible}
+                            class="apple-font slds-m-top_medium"
+                            style="color: #444444; font-size: 12px"
+                        >
+                            <lightning-icon
+                                icon-name="utility:info"
+                                size="x-small"
+                                alternative-text={maximumHunterLimitTextDisplay}
+                                title={maximumHunterLimitTextDisplay}
+                            >
+                            </lightning-icon>
+                            {maximumHunterLimitTextDisplay}
+                        </p>
+                    </div>
+                    <div class="slds-col slds-size_6-of-12">
+                        <template if:false={isReadonlyuser}>
+                            <template if:true={isHunterInvokeEligible}>
+                                <template if:false={isHunterInProgress}>
+                                    <template if:true={isHunterEmpty}>
+                                        <lightning-button
+                                            label="Initate Hunter"
+                                            title="Initate Hunter"
+                                            id="HunterOnline"
+                                            name="HunterOnline"
+                                            onclick={handleHunterOnline}
+                                            slot="actions"
+                                            class="slds-m-around_medium slds-float_right"
+                                        >
+                                        </lightning-button>
+                                    </template>
+
+                                    <template if:false={isHunterEmpty}>
+                                        <lightning-button
+                                            label="Re-Initate Hunter"
+                                            title="Re-Initate Hunter"
+                                            id="ReHunterOnline"
+                                            name="HunterOnline"
+                                            onclick={handleHunterOnline}
+                                            slot="actions"
+                                            class="slds-m-around_medium slds-float_right"
+                                        >
+                                        </lightning-button>
+                                    </template>
+                                </template>
+                            </template>
+
+                            <template if:true={isHunterInProgress}>
+                                <lightning-button-icon
+                                    class="slds-m-around_medium slds-float_right"
+                                    icon-name="utility:refresh"
+                                    alternative-text="Refresh"
+                                    title="Refresh"
+                                    onclick={handleRefresh}
+                                    slot="actions"
+                                ></lightning-button-icon>
+                            </template>
+                    </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slds-scrollable slds-p-horizontal_small">
+                <template if:true={hunterDetails}>
+                    <!-- <lightning-datatable class="slds-max-medium-table_stacked" data={hunterDetails} columns={hunterColumns} key-field="Id" hide-checkbox-column="true" >
+                     </lightning-datatable> -->
+
+                    <table
+                        class="slds-table slds-table_bordered slds-table_striped"
+                        aria-label="Example default base table of Opportunities"
+                    >
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Hunter Comments">Hunter Identifier</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Action Date">Action Date</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Match/UnMatch">Match/UnMatch</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Action Remarks">Action Remarks</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Hunter Comments">Hunter Comments</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Hunter Submission Date">Hunter Submission Date</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Hunter Final Status">Hunter Final Status</div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Final Hunter Status Date Change">
+                                        Final Hunter Status Date Change
+                                    </div>
+                                </th>
+                                <th class="slds-cell-wrap" scope="col">
+                                    <div class="" title="Decline of Suspect Reason">Decline of Suspect Reason</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <template if:true={hunterDetails}>
+                            <tbody>
+                                <template for:each={hunterDetails} for:item="hunterDetail">
+                                    <tr class="slds-hint-parent" key={hunterDetail.ActionDate}>
+                                        <td class="slds-cell-wrap" data-label="Name" scope="row">
+                                            <div class="" title={hunterDetail.identifier}>
+                                                {hunterDetail.identifier}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Name" scope="row">
+                                            <div class="" title={hunterDetail.ActionDate}>
+                                                {hunterDetail.ActionDate}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Match/UnMatch">
+                                            <div class="" title={hunterDetail.MatchOrNoMatch}>
+                                                {hunterDetail.MatchOrNoMatch}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Action Remarks">
+                                            <div class="" title={hunterDetail.Remarks}>{hunterDetail.Remarks}</div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Hunter Comments">
+                                            <div class="" title={hunterDetail.HunterComments}>
+                                                {hunterDetail.HunterComments}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Hunter Submission Date">
+                                            <div class="" title={hunterDetail.DateOfSubmission}>
+                                                {hunterDetail.DateOfSubmission}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Hunter Final Status">
+                                            <div class="" title={hunterDetail.HunterFinalStatus}>
+                                                {hunterDetail.HunterFinalStatus}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Final Hunter Status Date Change">
+                                            <div class="" title={hunterDetail.FraudStatusChangeDate}>
+                                                {hunterDetail.FraudStatusChangeDate}
+                                            </div>
+                                        </td>
+                                        <td class="slds-cell-wrap" data-label="Decline of Suspect Reason">
+                                            <div class="" title={hunterDetail.DeclineofSuspectReason}>
+                                                {hunterDetail.DeclineofSuspectReason}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </template>
+                    </table>
+                </template>
+            </div>
+
+            <div class="slds-col slds-size_12-of-12 slds-p-horizontal_small">
+                <template if:false={isErrorEncountered}>
+                    <template if:true={isHunterInProgress}>
+                        <b
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #ff538a; font-size: 12px"
+                            >{awaitingDisplay}</b
+                        >
+                    </template>
+
+                    <template if:false={isHunterInProgress}>
+                        <b
+                            if:true={isHunterEmpty}
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #444444; font-size: 12px"
+                            >{noRecToDisplay}</b
+                        >
+                    </template>
+                </template>
+                <template if:true={isErrorEncountered}>
+                    <div>
+                        <lightning-layout multiple-rows>
+                            <lightning-layout-item size="3" padding="around-small"> </lightning-layout-item>
+                            <lightning-layout-item size="9" padding="around-small">
+                                <template if:true={errorMessage}>
+                                    <div>
+                                        <b class="apple-font" style="color: #ff0000; font-size: 14px"
+                                            >Error Occurred:&nbsp;{errorMessage}
+                                        </b>
+                                    </div>
+                                </template>
+                                <template if:true={actionDate}>
+                                    <div>
+                                        <b class="apple-font" style="color: #ff0000; font-size: 14px"
+                                            >Action Date:&nbsp;{actionDate}
+                                        </b>
+                                    </div>
+                                </template>
+                            </lightning-layout-item>
+                            <lightning-layout-item size="3"> </lightning-layout-item>
+                            <lightning-layout-item size="9"> </lightning-layout-item>
+                        </lightning-layout>
+                    </div>
+                </template>
+            </div>
+            <div class="slds-col slds-size_12-of-12">
+                <!-- <lightning-card >
+                    
+    
+                
+    
+                   <lightning-accordion allow-multiple-sections-open
+                                        active-section-name={activeSections}> 
+                        <lightning-accordion-section name="HunterDetails" label="Hunter Result"> 
+                            <p class="slds-p-horizontal_small">
+                                
+                            </p>
+                            
+                            
+                            
+                    </lightning-accordion>  
+                </lightning-card> -->
+            </div>
+        </div>
+    </template>
+</template>

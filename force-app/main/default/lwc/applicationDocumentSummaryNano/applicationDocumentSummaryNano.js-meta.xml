@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+  <apiVersion>57.0</apiVersion>
+  <isExposed>true</isExposed>
+  <targets>
+    <target>lightning__RecordPage</target>
+    <target>lightningCommunity__Page</target>
+    <target>lightningCommunity__Default</target>
+  </targets>
+  <targetConfigs>
+
+    <targetConfig targets="lightning__RecordPage">
+        <property
+            name="skipGeoLocation"
+            type="Boolean"
+            label="Skip GeoLocation Tagging"
+            description="Skip GeoLocation Tagging"
+        />
+        <property
+            name="dclRecordTypeDeveloperName"
+            type="String"
+            label="DCI Record Type Name"
+            description="DCI Record Type Name"
+        />
+      <property
+        name="newLayoutFields"
+        type="String"
+        default='[
+        {"apiName":"Name","defaultName":"Other", "readonly": true},
+        {"apiName":"axisltd_Status__c","disabled": true},
+        {"apiName":"axisltd_is_original__c"},
+        {"apiName":"axisltd_remarks__c"},
+        {"apiName":"axisltd_received_date__c","readonly": true},
+        {"apiName":"axisltd_Approved_By__c","disabled": true}
+        ]'
+        label="Layout For New"
+        description="Onclick of New, these fields will be dispayed."
+      />
+      <property
+        name="editLayoutFields"
+        type="String"
+        default='[
+        {"apiName":"axisltd_Display_Name__c", "readonly": true},
+        {"apiName":"Name", "readonly": true},
+        {"apiName":"axisltd_Mandatory__c", "disabled": true},
+        {"apiName":"axisltd_Status__c"},
+        {"apiName":"axisltd_is_original__c"},
+        {"apiName":"axisltd_remarks__c"},
+        {"apiName":"axisltd_received_date__c","readonly": true},
+        {"apiName":"axisltd_Approved_By__c","disabled": true},
+        {"apiName":"axisltd_deferred_date__c","disabled": true}
+        ]'
+        label="Layout For Edit"
+        description="Onclick of Edit, these fields will be dispayed."
+      />
+      <property
+        name="additionalTableColumns"
+        type="String"
+        default='[
+        {"fieldToQuery":"tolabel(axisltd_Status__c)","label": "Status", "fieldName": "axisltd_Status__c", "type": "text","hideDefaultActions": true},
+        {"fieldToQuery":"axisltd_remarks__c","label": "Remarks", "fieldName": "axisltd_remarks__c", "type": "text","hideDefaultActions": true}
+    ]'
+        label="Table Columns"
+        description="Columns for the Table."
+      />
+      <property
+        name="CompressionRequired"
+        type="Boolean"
+        default='false'
+        label="Compression Required?"
+        description="If checked,image files will compressed on upload"
+      />
+      <property
+        name="CompressionToggle"
+        type="Boolean"
+        default='false'
+        label="Compression Toggler"
+        description="If checked, Compression can be Enabled/Disabled by Enduser"
+      />
+      <supportedFormFactors>
+        <supportedFormFactor type="Large" />
+        <supportedFormFactor type="Small" />
+      </supportedFormFactors>
+    </targetConfig>
+    <targetConfig targets="lightningCommunity__Default">
+      <property
+        name="recordId"
+        type="String"
+        default="{!recordId}"
+        label="Record Id"
+        required="true"
+      />
+       <property
+        name="CompressionRequired"
+        type="Boolean"
+        default='false'
+        label="Compression Required?"
+        description="If checked,image files will compressed on upload"
+      />
+      <property
+        name="CompressionToggle"
+        type="Boolean"
+        default='false'
+        label="Compression Toggle"
+        description="If checked, Compression can be Enabled/Disabled by Enduser"
+      />
+      <property
+        name="isCommunity"
+        type="Boolean"
+        default="true"
+        label="Is It a Community?"
+        required="true"
+      />
+      <property
+        name="newLayoutFields"
+        type="String"
+        default='[
+        {"apiName":"Name","defaultName":"Other", "readonly": true},
+        {"apiName":"axisltd_Status__c","disabled": true},
+        {"apiName":"axisltd_is_original__c"},
+        {"apiName":"axisltd_remarks__c"},
+        {"apiName":"axisltd_received_date__c","readonly": true},
+        {"apiName":"axisltd_Approved_By__c","disabled": true}
+        ]'
+        label="Layout For New"
+        description="Onclick of New, these fields will be dispayed."
+      />
+        
+      <property
+        name="editLayoutFields"
+        type="String"
+        default='[
+        {"apiName":"axisltd_Display_Name__c", "readonly": true},
+        {"apiName":"axisltd_Status__c"},
+        {"apiName":"axisltd_is_original__c"},
+        {"apiName":"axisltd_remarks__c"},
+        {"apiName":"axisltd_received_date__c","readonly": true},
+        {"apiName":"axisltd_Approved_By__c","disabled": true}
+        ]'
+        label="Layout For Edit"
+        description="Onclick of Edit, these fields will be dispayed."
+      />
+        <property
+            name="skipGeoLocation"
+            type="Boolean"
+            label="Skip GeoLocation Tagging"
+            description="Skip GeoLocation Tagging"
+        />
+        <property
+        name="dclRecordTypeDeveloperName"
+        type="String"
+        label="DCI Record Type Name"
+        description="DCI Record Type Name"
+        />
+      <property
+        name="additionalTableColumns"
+        type="String"
+        default='[
+        {"fieldToQuery":"tolabel(axisltd_Status__c)","label": "Status", "fieldName": "axisltd_Status__c", "type": "text","hideDefaultActions": true},
+        {"fieldToQuery":"axisltd_remarks__c","label": "Remarks", "fieldName": "axisltd_remarks__c", "type": "text","hideDefaultActions": true}
+    ]'
+        label="Table Columns"
+        description="Columns for the Table."
+      />
+    </targetConfig>
+  </targetConfigs>
+</LightningComponentBundle>

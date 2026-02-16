@@ -1,0 +1,997 @@
+<!-- sldsValidatorIgnore -->
+<!--
+  @description       : 
+  @author            : Amol
+  @group             : 
+  @last modified on  : 03-11-2024
+  @last modified by  : Amol
+  Modifications Log
+  Ver   Date         Author   Modification
+  1.0   03-08-2024   Amol   Initial Version
+-->
+<template>
+	<template if:true={showSpinner}>
+		<div class="slds-is-initial">
+			<lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+		</div>
+	</template>
+	<!-- for desktop  -->
+	<div class="desktopView slds-card__header slds-card_boundary">
+		<div class="slds-grid slds-gutters slds-wrap">
+			<div class="slds-col slds-size_12-of-12 slds-text-heading_small slds-m-left_small psoidexheading">
+				Applicant Details:
+			</div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<div class="slds-col slds-size_9-of-12">
+				<div class="slds-grid slds-gutters slds-wrap">
+					<template if:true={loanApplicantPosidexInfo}>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_xx-large">Applicant Name</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantName}>
+								<span>: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantName} </span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantName}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+						<div class="slds-col slds-size_1-of-12 slds-p-bottom_xx-small">
+							<span></span>
+						</div>
+
+						<div
+							class="slds-col slds-size_2-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_medium">DOB/DOI</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantDOB}>
+								<!--<span>: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantDOB} </span>-->
+								<span>: &nbsp; {formattedDate} </span> <!-- UAT 11/6 D51-->
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantDOB}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_xx-large">CIN/DIN</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN}>
+								<span>: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN} </span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+						<div class="slds-col slds-size_1-of-12 slds-p-bottom_xx-small">
+							<span></span>
+						</div>
+
+						<div
+							class="slds-col slds-size_2-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_medium">PAN</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantPan}>
+								<span>: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantPan} </span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantPan}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_xx-large">Phone Number</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}>
+								<span
+                                    >: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}
+                                </span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+
+						<!-- BB-25326 Start-->
+						<div style="text-align: right;" class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_medium">ETB CIF selected at customer profiling</span>
+						</div>
+						<div class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId}>
+								<span>: &nbsp; {loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId} </span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+						<!-- BB-25326 End-->
+
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<span class="slds-p-left_xx-large">Address</span>
+						</div>
+						<div
+							class="slds-col slds-size_3-of-12 slds-text-heading_medium slds-text-title_bold slds-p-bottom_xx-small">
+							<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}>
+								<span>: &nbsp;
+									<!--<span class="addressspan"
+                                        >{loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}
+									</span>-->
+									<span class="addressspan"> <!-- UAT 11/6 D51-->
+										{formattedAddresses}
+									</span>
+									
+									</span>
+							</template>
+							<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}>
+								<span>: &nbsp; </span>
+							</template>
+						</div>
+						<div class="slds-col slds-size_1-of-12 slds-p-bottom_xx-small">
+							<span></span>
+						</div>
+
+						
+						
+					</template>
+				</div>
+			</div>
+			<div class="slds-col slds-size_3-of-12">
+				<template if:false={isBorrowerDedupeInProgrss}>
+					<!--BB-2548-->
+					<!-- <template if:false={hasPosidexResults}>
+                                <lightning-button label="Initate Borrower Dedupe" title="Initate Borrower Dedupe" id="BorrowerDedupe" name="BorrowerDedupe" onclick={handleBorrowerDedupe} slot="actions"
+                                    class="slds-m-left_x-small slds-m-right_x-small slds-m-bottom_small slds-align_absolute-center">
+                                 </lightning-button>
+                            </template>  -->
+					<!--BB-2548-->
+					<!-- <template if:true={hasPosidexResults}> -->
+					<template if:false={isReadonlyuser}>
+						<lightning-button label="Re-Initate Borrower Dedupe" title="Re-Initate Borrower Dedupe"
+							id="ReInitiatedBorrowerDedupe" name="BorrowerDedupe" onclick={handleBorrowerDedupe}
+							slot="actions" class="slds-m-bottom_small slds-m-right_x-medium slds-align_absolute-center">
+						</lightning-button>
+						<lightning-button label="Skip" title="Skip" onclick={handleSkip} slot="actions"
+							class="slds-m-bottom_small slds-m-right_x-medium slds-align_absolute-center">
+						</lightning-button>
+					</template>
+					<!-- </template> -->
+				</template>
+				<!--BB-2548-->
+				<!-- <template if:true={isBorrowerDedupeInProgrss}>
+                            <lightning-button-icon icon-name="utility:refresh"  class="slds-float_right slds-m-right_x-large" alternative-text="Refresh" title="Refresh" onclick={handleRefresh} ></lightning-button-icon>
+                        </template>
+                         -->
+				<!--BB-2548-->
+			</div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<div class="slds-col slds-size_12-of-12 slds-text-heading_small slds-m-left_small psoidexheading">
+				Match Details:
+			</div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<template if:true={hasPosidexResults}>
+				<div class="slds-col slds-size_12-of-12 slds-m-left_small">
+					<span>Match Count: {posidexMatchResultsCount}</span>
+				</div>
+			</template>
+
+			<div class="slds-col slds-size_12-of-12">
+				<div class="slds-m-around_x-small">
+					<!--<lightning-datatable key-field="customerId" data={loanApplicantDemographics} columns={tableColumns}
+                                onrowaction={handleRowAction} hide-checkbox-column resize-column-disabled >
+                            </lightning-datatable> 
+
+                            <lightning-datatable key-field="customerId" data={loanApplicantDemographics} columns={tableColumns}
+                                onrowaction={handleRowAction} hide-checkbox-column resize-column-disabled >
+                            </lightning-datatable>   -->
+
+					<table class="slds-table slds-table_bordered slds-table_fixed-layout slds-table_striped"
+						aria-label="Example default base table of Opportunities">
+						<thead>
+							<tr class="slds-line-height_reset">
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="CIF Id">CIF Id</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Name">Name</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="PAN">PAN</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="DOB/DOI">DOB/DOI</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Mobile No.">Mobile No.</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="REASON_MATCH">Reason Match</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="CIF_TYPE">CIF Type</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="CIF_STATUS">CIF Status</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Constitution Code">Constitution Code</div>
+								</th>
+								<!--BB-2548-->
+								<!-- <th class="slds-cell-wrap" scope="col">
+                                      <div class="" title="Address">Address</div>
+                                    </th>
+                                    
+                                    <th class="slds-cell-wrap" scope="col">
+                                      <div class="" title="Email ID">Email ID</div>
+                                    </th> 
+                                    
+                                    <th class="slds-cell-wrap" scope="col">
+                                        <div class="" title="Is Valid">Is Valid</div>
+                                     </th> -->
+								<!--BB-2548-->
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Surviving CIF">Surviving CIF</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Edit">Edit</div>
+								</th>
+							</tr>
+						</thead>
+						<template if:true={loanApplicantDemographics}>
+							<tbody>
+								<template for:each={loanApplicantDemographics} for:item="demographics">
+									<tr class="slds-hint-parent" key={demographics.customerId}>
+										<td class="slds-cell-wrap" data-label="CIF Id">
+											<div class="" title={demographics.customerId}>
+												{demographics.customerId}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Name" scope="row">
+											<div class="" title={demographics.name}>{demographics.name}</div>
+										</td>
+										<td data-label="PAN">
+											<div class="" title={demographics.panNumber}>{demographics.panNumber}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="DOB/DOI">
+											<div class="" title={demographics.dateOfBirth}>
+												{demographics.dateOfBirth}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Mobile No.">
+											<div class="" title={demographics.contactNumbers}>
+												{demographics.contactNumbers}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Reason Match">
+											<div class="" title={demographics.reasonMatch}>
+												{demographics.reasonMatch}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="CIF Type">
+											<div class="" title={demographics.cifType}>{demographics.cifType}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="CIF Status">
+											<div class="" title={demographics.cifStatus}>{demographics.cifStatus}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Constitution Code">
+											<div class="slds-m-left_medium" title={demographics.constitutionCode}>
+												{demographics.constitutionCode}
+											</div>
+										</td>
+										<!--BB-2548-->
+										<!-- <td class="slds-cell-wrap" data-label="Address">
+                                                  <div class="" title={demographics.address}>{demographics.address}</div>
+                                                </td> 
+                                                
+                                                <td class="slds-cell-wrap" data-label="Email ID">
+                                                  <div class="" title={demographics.emailIds}>{demographics.emailIds}</div>
+                                                </td>-->
+
+										<!-- <td class="slds-cell-wrap " data-label="Is Valid">
+                                                    <div class="slds-m-left_medium" title={demographics.isValidCIF}>
+                                                        <lightning-input type="checkbox" variant="label-hidden" name="IsValidCIFTable" checked={demographics.isValidCIF} disabled></lightning-input>
+                                                    </div>
+                                                </td> -->
+										<!--BB-2548-->
+										<td class="slds-cell-wrap" data-label="Surviving CIF">
+											<div class="slds-m-left_medium" title={demographics.isServivingCIF}>
+												<lightning-input type="checkbox" variant="label-hidden"
+													name="ISSurvivingCIFTable" checked={demographics.isServivingCIF}
+													disabled></lightning-input>
+											</div>
+										</td>
+										<template if:false={isReadonlyuser}>
+											<td class="slds-cell-wrap" data-label="Edit">
+												<div class="" title="Edit">
+													<lightning-button label="Edit" name="Edit" variant="base"
+														data-id={demographics.customerId} onclick={handleEdit}>
+													</lightning-button>
+												</div>
+											</td>
+										</template>
+									</tr>
+								</template>
+							</tbody>
+						</template>
+					</table>
+				</div>
+
+				<template if:false={isErrorOccured}>
+					<template if:true={isBorrowerDedupeInProgrss}>
+						<b
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #ff538a; font-size: 12px"
+                            >{awaitingDisplay}</b>
+					</template>
+
+					<template if:false={hasPosidexResults}>
+						<b
+                            if:false={isBorrowerDedupeInProgrss}
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #444444; font-size: 12px"
+                            >{noRecToDisplay}
+                        </b>
+					</template>
+				</template>
+
+				<template if:true={isErrorOccured}>
+					<b
+                        class="apple-font slds-p-around_small slds-align_absolute-center"
+                        style="color: #ff0000; font-size: 12px"
+                    >
+                        Error Occurred: {errorMessage} [errorCode: {errorCode}]</b>
+				</template>
+			</div>
+		</div>
+
+		<lightning-card if:true={isModalOpen} class="slds-box">
+			<div>
+				<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+					aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+					<div class="slds-modal__container">
+						<header class="slds-modal__header">
+							<button
+                                class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close"
+                                onclick={closeModal}
+                            >
+                                <lightning-icon
+                                    icon-name="utility:close"
+                                    alternative-text="close"
+                                    variant="inverse"
+                                    size="small"
+                                ></lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+							<h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Match Details</h2>
+						</header>
+
+						<table class="slds-table slds-table_cell-buffer slds-table_header-hidden">
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Name" label="Name" value={selectedDemographic.name}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="customerId" label="Customer Id"
+										value={selectedDemographic.customerId} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="emailId" label="email Id"
+										value={selectedDemographic.emailIds} read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="DOBDOI" label="DOB/DOI"
+										value={selectedDemographic.dateOfBirth} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="CINDIN" label="CIN/DIN"
+										value={loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="PAN" label="PAN" value={selectedDemographic.panNumber}
+										read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Address" label="Address" value={selectedDemographic.address}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="PhoneNumber" label="Phone Number"
+										value={selectedDemographic.contactNumbers} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="ReasonMatch" label="Reason Match"
+										value={selectedDemographic.reasonMatch} read-only></lightning-input>
+								</td>
+								<!-- <td style="width: 33%;">
+                                <lightning-input name="passportNumber" label="Passport Number" value={selectedDemographic.passportNumber} read-only></lightning-input>
+                            </td> -->
+							</tr>
+
+							<!-- <tr>
+                            <td style="width: 33%;">
+                                <lightning-input name="drivingLicense" label="Driving License" value={selectedDemographic.drivingLicense} read-only></lightning-input>
+                            </td>
+                            <td style="width: 33%;">
+                                <lightning-input name="voterId" label="Voter Id" value={selectedDemographic.voterId} read-only></lightning-input>
+                            </td>
+                            <td style="width: 33%;">
+                                <lightning-input name="motherName" label="Mother Name" value={selectedDemographic.motherName} read-only></lightning-input>
+                            </td>
+                        </tr>  -->
+
+							<tr>
+								<!-- <td style="width: 33%;">
+                                <lightning-input name="nCIF" label="CIF Num" value={selectedDemographic.ncif} read-only></lightning-input>
+                            </td>-->
+								<td style="width: 33%">
+									<lightning-input name="CIFType" label="CIF Type" value={selectedDemographic.cifType}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="CIFStatus" label="CIF Status"
+										value={selectedDemographic.cifStatus} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="HealthCode" label="Health Code"
+										value={selectedDemographic.susReasonCode} read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Constitution" label="Constitution Code"
+										value={selectedDemographic.constitutionCode} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Surviving CIF" name="ISSurvivingCIF"
+										checked={selectedDemographic.isServivingCIF}
+										onchange={handleIsServivingCIFChange}></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Suspension Reason" name="SuspensionReason"
+										checked={selectedDemographic.SuspensionReason} disabled></lightning-input>
+								</td>
+								<!-- <td style="width: 33%;">
+                                <template if:true={selectedDemographic.isValidCIFEditable}>
+                                    <lightning-input type="checkbox" label="Is Valid CIF" name="IsValidCIF" checked={selectedDemographic.isValidCIF} onchange={handleIsValidCIFChange}></lightning-input>
+                                </template>
+
+                                <template if:false={selectedDemographic.isValidCIFEditable}>
+                                    <lightning-input type="checkbox" label="Is Valid CIF" name="IsValidCIF" checked={selectedDemographic.isValidCIF} disabled></lightning-input>
+                                </template>
+                            </td> -->
+							</tr>
+							<tr>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" name="IsBlacklisted" label="Is Blacklisted"
+									checked={selectedDemographic.IsBlacklisted} disabled></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Is Staff" name="IsStaff"
+										checked={selectedDemographic.IsStaff} disabled></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Is NRE" name="IsNRE"
+										checked={selectedDemographic.IsNRE} disabled></lightning-input>
+								</td>
+							</tr>
+						</table>
+						<footer class="slds-modal__footer">
+							<button
+                                class="slds-button slds-button_brand"
+                                onclick={updateSurvivingCIF}
+                                title="Save"
+                                disabled={readOnlyForUWUser}
+                            >
+                                Save
+                            </button>
+							<button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">
+                                Cancel
+                            </button>
+						</footer>
+					</div>
+				</section>
+				<div class="slds-backdrop slds-backdrop_open"></div>
+			</div>
+		</lightning-card>
+	</div>
+	<!-- mobile device -->
+
+
+
+
+	<div class="mobileview slds-card__header slds-card_boundary">
+		<div class="slds-grid slds-gutters slds-wrap">
+			<div
+				class="slds-col slds-size_12-of-12 slds-text-heading_small slds-m-left_small psoidexheading">
+				Applicant Details:
+			</div>
+
+
+			<template if:true={loanApplicantPosidexInfo}>
+				<div class="slds-p-around_small">
+					<div class="slds-form ">
+
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">Applicant Name</label>
+
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantName}>
+									<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantName}</p>
+								</template>
+								<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantName}>
+									<p class="output-value"></p>
+								</template>
+
+
+							</div>
+						</div>
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">DOB/DOI</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantDOB}>
+									<!--<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantDOB}</p>-->
+									<p class="output-value">{formattedDate}</p> <!-- UAT 11/6 D51-->
+								</template>
+								<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantDOB}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">CIN/DIN</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN}>
+									<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN}</p>
+								</template>
+								<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantCINDIN}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">PAN</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantPan}>
+									<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantPan}</p>
+								</template>
+								<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantPan}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">Address</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}>
+									<!--<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}
+									</p>-->
+									<p class="output-value"> <!-- UAT 11/6 D51-->
+										{formattedAddresses}
+									</p>
+								</template>
+								<template if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantAddress}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">Phone Number</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}>
+									<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}</p>
+								</template>
+								<template
+									if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantPhoneNumber}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<!-- BB-25326 Start-->
+						<div class="slds-form-element slds-form-element_horizontal slds-border_bottom">
+							<div class="output-field slds-form-element__control">
+								<label class="output-label slds-form-element__label" for="horizontal-input-id-01">ETB CIF selected at customer profiling</label>
+								<template if:true={loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId}>
+									<p class="output-value">
+										{loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId}</p>
+								</template>
+								<template
+									if:false={loanApplicantPosidexInfo.currentRequestDetails.applicantCustomerId}>
+									<p class="output-value"></p>
+								</template>
+							</div>
+						</div>
+						<!-- BB-25326 End-->
+						<div>
+							<template if:false={isBorrowerDedupeInProgrss}>
+								<!--BB-2548-->
+								<!-- <template if:false={hasPosidexResults}>
+                                <lightning-button label="Initate Borrower Dedupe" title="Initate Borrower Dedupe" id="BorrowerDedupe" name="BorrowerDedupe" onclick={handleBorrowerDedupe} slot="actions"
+                                    class="slds-m-left_x-small slds-m-right_x-small slds-m-bottom_small slds-align_absolute-center">
+                                 </lightning-button>
+                            </template>  -->
+								<!--BB-2548-->
+								<!-- <template if:true={hasPosidexResults}> -->									
+									<template if:false={isReadonlyuser}>
+									<lightning-button label="Re-Initate Borrower Dedupe"
+										title="Re-Initate Borrower Dedupe" id="ReInitiatedBorrowerDedupe01"
+										name="BorrowerDedupe" onclick={handleBorrowerDedupe} slot="actions"
+										class="slds-m-bottom_small slds-m-right_x-medium slds-align_absolute-center">
+									</lightning-button>
+									<lightning-button label="Skip" title="Skip" onclick={handleSkip} slot="actions"
+										class="slds-m-bottom_small slds-m-right_x-medium slds-align_absolute-center">
+									</lightning-button>
+								</template>
+								<!-- </template> -->
+							</template>
+						</div>
+
+					</div>
+				</div>
+			</template>
+			<div class="slds-col slds-size_3-of-12">
+
+				<!--BB-2548-->
+				<!-- <template if:true={isBorrowerDedupeInProgrss}>
+                            <lightning-button-icon icon-name="utility:refresh"  class="slds-float_right slds-m-right_x-large" alternative-text="Refresh" title="Refresh" onclick={handleRefresh} ></lightning-button-icon>
+                        </template>
+                         -->
+				<!--BB-2548-->
+			</div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<div class="slds-col slds-size_12-of-12 slds-text-heading_small slds-m-left_small psoidexheading">
+				Match Details:
+			</div>
+			<div class="slds-col slds-size_12-of-12"><span> &nbsp;</span></div>
+			<template if:true={hasPosidexResults}>
+				<div class="slds-col slds-size_12-of-12 slds-m-left_small">
+					<span>Match Count: {posidexMatchResultsCount}</span>
+				</div>
+			</template>
+
+			<div class="slds-col slds-size_12-of-12">
+
+				<div class="slds-scrollable slds-p-horizontal_small">
+					<!-- <lightning-datatable class="slds-max-medium-table_stacked" data="" columns="" key-field="Id" hide-checkbox-column="true" >
+                     </lightning-datatable> -->
+
+					<table class="slds-table slds-table_bordered slds-table_striped"
+						aria-label="Example default base table of Opportunities">
+						<thead>
+							<tr class="slds-line-height_reset">
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Hunter Comments">CIF Id</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Action Date">Name</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Match/UnMatch">PAN</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Action Remarks">DOB/DOI</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Hunter Comments">Mobile No.</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Hunter Submission Date">Reason Match</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Hunter Final Status">CIF Type</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Final Hunter Status Date Change">
+										CIF Status
+									</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Decline of Suspect Reason">Constitution Code</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Decline of Suspect Reason">Surviving CIF</div>
+								</th>
+								<th class="slds-cell-wrap" scope="col">
+									<div class="" title="Decline of Suspect Reason">Edit</div>
+								</th>
+							</tr>
+						</thead>
+						<template if:true={loanApplicantDemographics}>
+							<tbody>
+								<template for:each={loanApplicantDemographics} for:item="demographics">
+									<tr class="slds-hint-parent" key={demographics.customerId}>
+										<td class="slds-cell-wrap" data-label="CIF Id">
+											<div class="" title={demographics.customerId}>
+												{demographics.customerId}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Name" scope="row">
+											<div class="" title={demographics.name}>{demographics.name}</div>
+										</td>
+										<td data-label="PAN">
+											<div class="" title={demographics.panNumber}>{demographics.panNumber}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="DOB/DOI">
+											<div class="" title={demographics.dateOfBirth}>
+												{demographics.dateOfBirth}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Mobile No.">
+											<div class="" title={demographics.contactNumbers}>
+												{demographics.contactNumbers}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Reason Match">
+											<div class="" title={demographics.reasonMatch}>
+												{demographics.reasonMatch}
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="CIF Type">
+											<div class="" title={demographics.cifType}>{demographics.cifType}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="CIF Status">
+											<div class="" title={demographics.cifStatus}>{demographics.cifStatus}</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Constitution Code">
+											<div class="slds-m-left_medium" title={demographics.constitutionCode}>
+												{demographics.constitutionCode}
+											</div>
+										</td>
+										<!--BB-2548-->
+										<!-- <td class="slds-cell-wrap" data-label="Address">
+                                                  <div class="" title={demographics.address}>{demographics.address}</div>
+                                                </td> 
+                                                
+                                                <td class="slds-cell-wrap" data-label="Email ID">
+                                                  <div class="" title={demographics.emailIds}>{demographics.emailIds}</div>
+                                                </td>-->
+
+										<!-- <td class="slds-cell-wrap " data-label="Is Valid">
+                                                    <div class="slds-m-left_medium" title={demographics.isValidCIF}>
+                                                        <lightning-input type="checkbox" variant="label-hidden" name="IsValidCIFTable" checked={demographics.isValidCIF} disabled></lightning-input>
+                                                    </div>
+                                                </td> -->
+										<!--BB-2548-->
+										<td class="slds-cell-wrap" data-label="Surviving CIF">
+											<div class="slds-m-left_medium" title={demographics.isServivingCIF}>
+												<lightning-input type="checkbox" variant="label-hidden"
+													name="ISSurvivingCIFTable" checked={demographics.isServivingCIF}
+													disabled>
+												</lightning-input>
+											</div>
+										</td>
+										<td class="slds-cell-wrap" data-label="Edit">
+											<div class="" title="Edit">
+												<lightning-button label="Edit" name="Edit" variant="base"
+													data-id={demographics.customerId} onclick={handleEdit}>
+												</lightning-button>
+											</div>
+										</td>
+									</tr>
+								</template>
+							</tbody>
+						</template>
+					</table>
+				</div>
+
+
+
+				<template if:false={isErrorOccured}>
+					<template if:true={isBorrowerDedupeInProgrss}>
+						<b
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #ff538a; font-size: 12px"
+                            >{awaitingDisplay}</b>
+					</template>
+
+					<template if:false={hasPosidexResults}>
+						<b
+                            if:false={isBorrowerDedupeInProgrss}
+                            class="apple-font slds-p-around_small slds-align_absolute-center"
+                            style="color: #444444; font-size: 12px"
+                            >{noRecToDisplay}
+                        </b>
+					</template>
+				</template>
+
+				<template if:true={isErrorOccured}>
+					<b
+                        class="apple-font slds-p-around_small slds-align_absolute-center"
+                        style="color: #ff0000; font-size: 12px"
+                    >
+                        Error Occurred: {errorMessage} [errorCode: {errorCode}]</b>
+				</template>
+			</div>
+		</div>
+
+
+
+		<lightning-card if:true={isModalOpen} class="slds-box">
+			<div>
+				<section role="dialog" tabindex="-1" aria-labelledby="modal-heading" aria-modal="true"
+					aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+					<div class="slds-modal__container">
+						<header class="slds-modal__header">
+							<button
+                                class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                                title="Close"
+                                onclick={closeModal}
+                            >
+                                <lightning-icon
+                                    icon-name="utility:close"
+                                    alternative-text="close"
+                                    variant="inverse"
+                                    size="small"
+                                ></lightning-icon>
+                                <span class="slds-assistive-text">Close</span>
+                            </button>
+							<h2 id="modal-heading" class="slds-text-heading_medium slds-hyphenate">Match Details</h2>
+						</header>
+
+						<table class="slds-table slds-table_cell-buffer slds-table_header-hidden">
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Name" label="Name" value={selectedDemographic.name}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="customerId" label="Customer Id"
+										value={selectedDemographic.customerId} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="emailId" label="email Id"
+										value={selectedDemographic.emailIds} read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="DOBDOI" label="DOB/DOI"
+										value={selectedDemographic.dateOfBirth} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="CINDIN" label="CIN/DIN"
+										value={selectedDemographic.customerId} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="PAN" label="PAN" value={selectedDemographic.panNumber}
+										read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Address" label="Address" value={selectedDemographic.address}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="PhoneNumber" label="Phone Number"
+										value={selectedDemographic.contactNumbers} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="ReasonMatch" label="Reason Match"
+										value={selectedDemographic.reasonMatch} read-only></lightning-input>
+								</td>
+								<!-- <td style="width: 33%;">
+                                <lightning-input name="passportNumber" label="Passport Number" value={selectedDemographic.passportNumber} read-only></lightning-input>
+                            </td> -->
+							</tr>
+
+							<!-- <tr>
+                            <td style="width: 33%;">
+                                <lightning-input name="drivingLicense" label="Driving License" value={selectedDemographic.drivingLicense} read-only></lightning-input>
+                            </td>
+                            <td style="width: 33%;">
+                                <lightning-input name="voterId" label="Voter Id" value={selectedDemographic.voterId} read-only></lightning-input>
+                            </td>
+                            <td style="width: 33%;">
+                                <lightning-input name="motherName" label="Mother Name" value={selectedDemographic.motherName} read-only></lightning-input>
+                            </td>
+                        </tr>  -->
+
+							<tr>
+								<!-- <td style="width: 33%;">
+                                <lightning-input name="nCIF" label="CIF Num" value={selectedDemographic.ncif} read-only></lightning-input>
+                            </td>-->
+								<td style="width: 33%">
+									<lightning-input name="CIFType" label="CIF Type" value={selectedDemographic.cifType}
+										read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="CIFStatus" label="CIF Status"
+										value={selectedDemographic.cifStatus} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input name="HealthCode" label="Health Code"
+										value={selectedDemographic.susReasonCode} read-only></lightning-input>
+								</td>
+							</tr>
+
+							<tr>
+								<td style="width: 33%">
+									<lightning-input name="Constitution" label="Constitution"
+										value={selectedDemographic.constitutionCode} read-only></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Surviving CIF" name="ISSurvivingCIF"
+										checked={selectedDemographic.isServivingCIF}
+										onchange={handleIsServivingCIFChange}></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Suspension Reason" name="SuspensionReason"
+										checked={selectedDemographic.SuspensionReason} disabled></lightning-input>
+								</td>
+								<!-- <td style="width: 33%;">
+                                <template if:true={selectedDemographic.isValidCIFEditable}>
+                                    <lightning-input type="checkbox" label="Is Valid CIF" name="IsValidCIF" checked={selectedDemographic.isValidCIF} onchange={handleIsValidCIFChange}></lightning-input>
+                                </template>
+
+                                <template if:false={selectedDemographic.isValidCIFEditable}>
+                                    <lightning-input type="checkbox" label="Is Valid CIF" name="IsValidCIF" checked={selectedDemographic.isValidCIF} disabled></lightning-input>
+                                </template>
+                            </td> -->
+							</tr>
+							<tr>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" name="IsBlacklisted" label="Is Blacklisted"
+									checked={selectedDemographic.IsBlacklisted} disabled></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Is Staff" name="IsStaff"
+										checked={selectedDemographic.IsStaff} disabled></lightning-input>
+								</td>
+								<td style="width: 33%">
+									<lightning-input type="checkbox" label="Is NRE" name="IsNRE"
+										checked={selectedDemographic.IsNRE} disabled></lightning-input>
+								</td>
+							</tr>
+						</table>
+						<footer class="slds-modal__footer">
+							<button
+                                class="slds-button slds-button_brand"
+                                onclick={updateSurvivingCIF}
+                                title="Save"
+                                disabled={readOnlyForUWUser}
+                            >
+                                Save
+                            </button>
+							<button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">
+                                Cancel
+                            </button>
+						</footer>
+					</div>
+				</section>
+				<div class="slds-backdrop slds-backdrop_open"></div>
+			</div>
+		</lightning-card>
+	</div>
+
+</template>
