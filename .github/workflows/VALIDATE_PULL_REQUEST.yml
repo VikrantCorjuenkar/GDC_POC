@@ -160,6 +160,8 @@ jobs:
               run: |
                 npm dedupe
 
+                npm ci
+
                 echo "Executing ESLint Scan on changed LWC files..."
                 sf scanner run \
                   --target "changed-sources/force-app/**/*.js" \
