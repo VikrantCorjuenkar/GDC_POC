@@ -163,4 +163,6 @@ public with sharing class AxisNanoFetchAccountDetails {
         @AuraEnabled public List<AxisNanoFetchAccountDetailsWrap.AccountDetails> accList= new List<AxisNanoFetchAccountDetailsWrap.AccountDetails>();
         @AuraEnabled public String errorMsg='';
     }
+
+    
 }
