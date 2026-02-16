@@ -613,4 +613,8 @@ export default class ApplicationDocumentSummaryNano extends LightningElement {
         return (val != '' && val != null && val != undefined) ;
     }
     /*Avinash code end */
+
+    somefunction(){
+        console.log('somefunction') ;
+    }
 }

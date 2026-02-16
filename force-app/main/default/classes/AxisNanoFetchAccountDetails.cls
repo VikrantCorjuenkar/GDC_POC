@@ -164,5 +164,4 @@ public with sharing class AxisNanoFetchAccountDetails {
         @AuraEnabled public String errorMsg='';
     }
 
-
 }
