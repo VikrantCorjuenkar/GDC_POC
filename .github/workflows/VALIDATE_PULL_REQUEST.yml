@@ -74,6 +74,10 @@ jobs:
             - name: 'Installing SFDX scanner'
               run: echo y | sf plugins install @salesforce/sfdx-scanner
 
+            - name: Install Flow Scanner Plugin
+              run: |
+                  echo y | sf plugins install lightning-flow-scanner
+                  sf plugins
 
             # We use SFDX Git Delta to create a directory with only the metadata that has changed.
             # this allows us to deploy only those changes, as opposed to deploying the entire branch. 
@@ -145,7 +149,6 @@ jobs:
                 else
                   echo "No changed metadata to scan."
                 fi
-
 
             # Runs Flow Scan. This task will fail if there is any rule that is violated
             - name: Salesforce Flow Scan. This step will FAIL if there is any critical violation of governor limits hit in Flows
