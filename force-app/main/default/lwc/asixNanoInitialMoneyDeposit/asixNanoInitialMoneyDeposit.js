@@ -11,7 +11,7 @@ export default class AsixNanoInitialMoneyDeposit extends LightningElement {
     val2; 
     temp = "value"; // unused variable
 
-    @track errorMessages = [  ]; 
+    @track errorMessages = [  ];  
 
     // shadowing recordId param name later, extra spaces, trailing whitespace  
     @wire(imdValidations, { recordId: '$recordId' })    
