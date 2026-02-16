@@ -29,25 +29,6 @@ function Get-GitAuthor {
     }
 }
 
-# --- HELPER FUNCTION: Get Unpushed Files ---
-function Get-UnpushedFiles {
-    Write-Host "🔍 Detecting unpushed files..." -ForegroundColor Cyan
-
-    $currentBranch = git rev-parse --abbrev-ref HEAD
-
-    # Fetch latest remote state
-    git fetch origin $currentBranch 2>$null
-
-    # Get files different from remote branch
-    $files = git diff --name-only origin/$currentBranch
-
-    # Filter only force-app files
-    $filtered = $files | Where-Object { $_ -like "force-app/*" }
-
-    return $filtered
-}
-
-
 # --- HELPER FUNCTION: Run Scan & Enrich with Author ---
 function Run-ScanAndEnrich {
     param (
@@ -174,63 +155,31 @@ if (Test-Path $configPath) {
     (Get-Content $configPath).Replace('!**/*-meta.xml', '**/*-meta.xml') | Set-Content $configPath
 }
 
-# --- EXECUTE SCANS (ONLY UNPUSHED FILES) ---
-
-$changedFiles = Get-UnpushedFiles
-
-if (-not $changedFiles -or $changedFiles.Count -eq 0) {
-    Write-Host "✅ No unpushed Salesforce changes detected. Skipping scans." -ForegroundColor Green
-    exit 0
-}
-
-Write-Host "📂 Files to be scanned:" -ForegroundColor Cyan
-$changedFiles | ForEach-Object { Write-Host "   - $_" }
-
-# Separate by type
-$apexFiles = $changedFiles | Where-Object { $_ -like "*.cls" -or $_ -like "*.trigger" }
-$jsFiles   = $changedFiles | Where-Object { $_ -like "*.js" }
-$flowFiles = $changedFiles | Where-Object { $_ -like "*.flow-meta.xml" }
+# --- EXECUTE SCANS ---
 
 # A. Run Apex PMD
-if ($apexFiles.Count -gt 0) {
-    Run-ScanAndEnrich -ScanType "Apex PMD" `
-        -Target ($apexFiles -join ",") `
-        -Engine "pmd" `
-        -ConfigFile $pmdRuleSet `
-        -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
-}
-else {
-    Write-Host "No Apex files changed."
-}
+Run-ScanAndEnrich -ScanType "Apex PMD" `
+    -Target "./force-app/" `
+    -Engine "pmd" `
+    -ConfigFile $pmdRuleSet `
+    -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
 
 # B. Run JS ESLint
-if ($jsFiles.Count -gt 0) {
-    Run-ScanAndEnrich -ScanType "JS ESLint" `
-        -Target ($jsFiles -join ",") `
-        -Engine "eslint-lwc" `
-        -ConfigFile "./scripts/eslint/.eslintrc.json" `
-        -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
-}
-else {
-    Write-Host "No LWC files changed."
-}
+Run-ScanAndEnrich -ScanType "JS ESLint" `
+    -Target "./force-app/**/*.js" `
+    -Engine "eslint-lwc" `
+    -ConfigFile "./scripts/eslint/.eslintrc.json" `
+    -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
 
 # C. Run Flow Scan
-if ($flowFiles.Count -gt 0) {
-    Write-Host "🔎 Executing Flow Scan on changed flows..." -ForegroundColor Yellow
-    foreach ($flow in $flowFiles) {
-        sf flow scan -d $flow
-    }
-}
-else {
-    Write-Host "No Flow changes detected."
-}
+Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
+sf flow scan -d "./force-app/" | Out-File -FilePath "./scanResults/flowScan.json" -Encoding UTF8
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
 
 # --- COPY TO GOOGLE DRIVE ---
 # IMPORTANT: Update this path to your exact Google Drive location
-$DrivePath = "/Users/vcorjuenkar/Google Drive/GDC PMD violations Report"
+$DrivePath = "/Users/ujjwal.rawat/Google Drive/GDC PMD violations Report"
 
 if (Test-Path $DrivePath) {
     Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
