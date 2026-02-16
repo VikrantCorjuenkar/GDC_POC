@@ -80,13 +80,37 @@ jobs:
             # This helps reducing deployment times
             - name: 'Create delta packages for changed metadata'
               run: |
-                  mkdir changed-sources
+                  mkdir -p changed-sources
+
+                  echo "Generating delta..."
                   sf sgd source delta \
-                    --to "HEAD" \
-                    --from "origin/${{ github.base_ref }}" \
+                    --to "${{ github.event.pull_request.head.sha }}" \
+                    --from "${{ github.event.pull_request.base.sha }}" \
                     --output changed-sources/ \
                     --generate-delta \
                     --source force-app/
+
+                  echo ""
+                  echo "======================================"
+                  echo "📂 CONTENTS OF changed-sources"
+                  echo "======================================"
+
+                  if [ -d "changed-sources" ]; then
+                    find changed-sources -type f
+                  else
+                    echo "❌ changed-sources directory not found."
+                  fi
+
+                  echo ""
+                  echo "======================================"
+                  echo "📦 PACKAGE.XML (if generated)"
+                  echo "======================================"
+
+                  if [ -f "changed-sources/package/package.xml" ]; then
+                    cat changed-sources/package/package.xml
+                  else
+                    echo "No package.xml generated."
+                  fi
 
             # Now we can use the sfdx scanner to scan the code in the delta directory
             # The output of the scan is stored in a file called apexScanResults.sarif
