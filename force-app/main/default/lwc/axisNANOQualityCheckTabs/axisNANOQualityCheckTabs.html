@@ -1,0 +1,65 @@
+<!--
+  @description       : 
+  @author            : Amol
+  @group             : 
+  @last modified on  : 03-10-2024
+  @last modified by  : Amol
+  Modifications Log
+  Ver   Date         Author   Modification
+  1.0   03-08-2024   Amol   Initial Version
+-->
+<template>
+    <lightning-tabset>
+        <!--BB-39194 Sprint 8 Vikrant Reordering of tabs-->
+        <!--
+            1. Bureau Result
+            2. RAMP Details
+            3. Hunter Details
+            4. Posidex Details
+        -->
+        <template if:false={isFCUUser}> <!--BB-68145 (FCU) - Vikrant - Sprint 18-->
+            <lightning-tab label="Bureau Result" icon-name="standard:case">
+                <c-preview-bureau-result-application record-id={recordId} object-api-name={objectApiName} is-readonlyuser ={isReadOnlyUser}></c-preview-bureau-result-application> 
+            </lightning-tab>
+            <lightning-tab label="RAMP Details" icon-name="standard:case">
+                <c-axis-nano-loan-application-r-a-m-p-details
+                    record-id={recordId} is-readonlyuser ={isReadOnlyUser}
+                ></c-axis-nano-loan-application-r-a-m-p-details>
+            </lightning-tab>
+            <lightning-tab label="Hunter Details" icon-name="standard:case">
+                <c-axis-n-a-n-o-hunter-details-table record-id={recordId} is-readonlyuser ={isReadOnlyUser}></c-axis-n-a-n-o-hunter-details-table>
+            </lightning-tab>
+            <lightning-tab label="Posidex Details" icon-name="standard:case">
+                <c-axis-n-a-n-o-loan-application-posidex-details
+                    record-id={recordId} is-readonlyuser ={isReadOnlyUser}
+                ></c-axis-n-a-n-o-loan-application-posidex-details>
+            </lightning-tab>
+            <!--BB-25843 - Vikrant - Sprint 15  -->
+            <template lwc:if={showCrossProductDelinquencyDetails}>
+                <lightning-tab label="Cross Product Delinquency" icon-name="standard:case">
+                    <c-axis-nano-cross-product-delinquency-details
+                        record-id={recordId} is-readonlyuser ={isReadOnlyUser}
+                    ></c-axis-nano-cross-product-delinquency-details>
+                </lightning-tab>
+            </template>
+
+            <!--BB-72956 ELK changes-->
+            <template lwc:if={showWIPTable}>
+                <lightning-tab label="WIP Cases" icon-name="standard:case">
+                    <c-tractor-w-i-p-table record-id={recordId}></c-tractor-w-i-p-table>
+                </lightning-tab>
+            </template>
+
+        </template>
+
+        <!--BB-68145 (FCU) - Vikrant - Sprint 18-->
+        <template if:true={isFCUUser}>
+            <lightning-tab label="RAMP Details" icon-name="standard:case">
+                <c-axis-nano-loan-application-r-a-m-p-details
+                    record-id={recordId} is-readonlyuser ={isReadOnlyUser}
+                ></c-axis-nano-loan-application-r-a-m-p-details>
+            </lightning-tab>
+        </template>
+
+    </lightning-tabset>
+</template>

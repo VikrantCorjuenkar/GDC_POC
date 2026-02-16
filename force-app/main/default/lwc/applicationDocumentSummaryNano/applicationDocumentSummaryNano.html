@@ -1,0 +1,300 @@
+<template>
+    <template if:false={gotTheResponse}>
+        <div class="slds-is-initial">
+           <lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+        </div>
+     </template>
+    <div class="slds-box slds-theme_default">
+        <header class="slds-media slds-media_center slds-has-flexi-truncate pageHeader">
+            <div class="slds-align_absolute-center">
+                <span>Documents Overview</span>
+            </div>
+        </header>
+        <!--Overall Summary-->
+        <article class="slds-card slds-card_boundary slds-m-around_xx-small">
+            <div class="slds-card__header slds-grid">
+                <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                    <div class="slds-media__figure">
+                        <lightning-icon icon-name="custom:custom45" size="small"></lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                        <h2 class="slds-card__header-title">
+                            Total Documents Summary
+                        </h2>
+                    </div>
+                    <div class="slds-no-flex">
+                        <lightning-button-icon icon-name={headerButtonIcon} size="x-small"
+                            onclick={handleSummaryDisplay}></lightning-button-icon>
+                    </div>
+                </header>
+            </div>
+            <template if:false={hideTotalSummary}>
+                <c-document-summary-panel 
+                    mand-docs-label="Pending Documents (Required)"
+                    mand-docs-cnt={responseWrapper.pendingMandatoryDocs}
+                    non-mand-docs-label="Pending Documents (Optional)"
+                    non-mand-docs-cnt={responseWrapper.pendingNonMandatoryDocs}
+                    recv-docs-label="Received Documents"
+                    recv-docs-cnt={responseWrapper.receievedDocs}
+                    total-docs-label="Total Documents"
+                    total-docs-cnt={responseWrapper.totalDocs}>
+                </c-document-summary-panel>
+            </template>
+        </article>
+        <br/>
+        
+        <template if:true={gotTheResponse}>
+            <b>{errorMessage}</b><br/>
+            <lightning-tabset>
+                <lightning-tab label="Loan Application" icon-name="custom:custom8">
+                    <!--Application Summary-->
+                    <c-document-checklist-item-relatedlist related-field="axisltd_Loan_Application__c"
+                                                            record-id={recordId}
+                                                            object-api-name="ResidentialLoanApplication"
+                                                            newbutton={createDocumentDisabled} 
+                                                            editbutton={editDocument}  
+                                                            disable-upload={disableUpload}  
+                                                            related-list-label={responseWrapper.applicationName}
+                                                            is-community={isCommunity}
+                                                            show-summary-button=true
+                                                            ondatachange={handleDataChange}
+                                                            hide-panel
+                                                            from-parent-cmp
+                                                            latitude-from-parent={latitude}
+                                                            longitude-from-parent={longitude}
+                                                            new-layout-fields={newLayoutFields}
+                                                            edit-layout-fields={editLayoutFields}
+                                                            additional-table-columns={additionalTableColumns}
+                                                            dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                            skip-geo-location={skipGeoLocation}
+                                                            compression={CompressionRequired}
+                                                            compression-toggle={CompressionToggle}
+                    ></c-document-checklist-item-relatedlist>
+                </lightning-tab>
+                <lightning-tab label="Loan Applicants" icon-name="custom:custom8">
+                    <!--Applicants Summary-->
+                    <template for:each={responseWrapper.loanApplicants} for:item="applicant">
+                        <c-document-checklist-item-relatedlist key={applicant.applicantId}
+                                                    related-field="axisltd_Loan_Applicant__c"
+                                                    parent-record-field="LoanApplicationId"
+                                                    record-id={applicant.applicantId}
+                                                    object-api-name="LoanApplicant"
+                                                    newbutton={createDocumentDisabled}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={applicant.applicantName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasApplicants}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!-- BB-64469 | Priyank | START -->
+                <lightning-tab label="Guarantor" icon-name="custom:custom8"> 
+                    <!-- guarantor Applicants Summary-->
+                    <template for:each={responseWrapper.guarantorloanApplicants} for:item="applicant">
+                        <c-document-checklist-item-relatedlist key={applicant.applicantId}
+                                                    related-field="axisltd_Loan_Applicant__c"
+                                                    parent-record-field="LoanApplicationId"
+                                                    record-id={applicant.applicantId}
+                                                    object-api-name="LoanApplicant"
+                                                    newbutton={createDocumentDisabled}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={applicant.applicantName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasGApplicants}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!-- BB-64469 | Priyank | END -->
+                <!--BB-4614 - Vikrant - Sprint 16 - start-->
+                <!--New tab added for Asset-->
+                <lightning-tab label="Assets" icon-name="custom:custom8">
+                    <!--loanApplicationProperties Summary-->
+                    <template for:each={responseWrapper.properties} for:item="property">
+                        <c-document-checklist-item-relatedlist key={property.propertyId}
+                                                    related-field="Loan_Application_Property__c"
+                                                    parent-record-field="LoanApplicationId"
+                                                    record-id={property.propertyId}
+                                                    object-api-name="LoanApplicationProperty"
+                                                    newbutton={createDocumentDisabled}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={property.propertyName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasProperties}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!--BB-4614 - Vikrant - Sprint 16 - end-->
+                <lightning-tab label="Loan Application Line Items" icon-name="custom:custom8">
+                    <!--Line Items Summary-->
+                    <template for:each={responseWrapper.lineItems} for:item="lineItem">
+                        <c-document-checklist-item-relatedlist key={lineItem.lineItemId}
+                                                    related-field="axisltd_Loan_Application_Line_Item__c"
+                                                    record-id={lineItem.lineItemId}
+                                                    object-api-name="Loan_Apllication_Line_Item__c"
+                                                    newbutton={createDocument}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={lineItem.lineItemName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasLineItems}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!--Insurance Summary-->
+                <lightning-tab label="Insurance Policies" icon-name="standard:record">
+                    <template for:each={responseWrapper.insurancePolicies} for:item="insurance">
+                        <c-document-checklist-item-relatedlist key={insurance.insuranceId}
+                                                    related-field="axisltd_Insurance_Policy__c"
+                                                    record-id={insurance.insuranceId}
+                                                    object-api-name="InsurancePolicy"
+                                                    newbutton={createDocument}   
+                                                    editbutton={editDocument}    
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={insurance.insuranceName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasInsurances}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!--Mitigant Summary-->
+                <lightning-tab label="Mitigants" icon-name="standard:record">
+                    <template for:each={responseWrapper.mitigants} for:item="mitigant">
+                        <c-document-checklist-item-relatedlist key={mitigant.mitigantId}
+                                                    related-field="axisltd_Mitigant__c"
+                                                    record-id={mitigant.mitigantId}
+                                                    object-api-name="Mitigant__c"
+                                                    newbutton={createDocument}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}   
+                                                    related-list-label={mitigant.mitigantName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    dcl-record-type-developer-name={dclRecordTypeDeveloperName}
+                                                    skip-geo-location={skipGeoLocation}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasMitigants}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+                <!--BB-2305 Invoice Summary-->
+                <lightning-tab label="Invoices" icon-name="standard:record">
+                    <template for:each={responseWrapper.invoices} for:item="invoice">
+                        <c-document-checklist-item-relatedlist key={invoice.invoiceId}
+                                                    related-field="axisltd_Invoice__c"
+                                                    record-id={invoice.invoiceId}
+                                                    object-api-name="Invoice__c"
+                                                    newbutton={createDocument}  
+                                                    editbutton={editDocument}   
+                                                    disable-upload={disableUpload}  
+                                                    related-list-label={invoice.invoiceName}
+                                                    is-community={isCommunity}
+                                                    show-summary-button=true
+                                                    ondatachange={handleDataChange}
+                                                    hide-panel
+                                                    from-parent-cmp
+                                                    latitude-from-parent={latitude}
+                                                    longitude-from-parent={longitude}
+                                                    new-layout-fields={newLayoutFields}
+                                                    edit-layout-fields={editLayoutFields}
+                                                    additional-table-columns={additionalTableColumns}
+                                                    compression={CompressionRequired}
+                                                    compression-toggle={CompressionToggle}
+                        ></c-document-checklist-item-relatedlist>
+                    </template>
+                    <template if:false={hasInvoices}>
+                        <c-display-error-message error-message="No Records Found"></c-display-error-message>
+                    </template>
+                </lightning-tab>
+            </lightning-tabset>
+        </template>
+    </div>
+</template>

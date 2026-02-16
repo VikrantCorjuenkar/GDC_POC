@@ -1,0 +1,189 @@
+<template>
+    <lightning-layout multiple-rows="true">
+        <lightning-layout-item flexibility="auto" size="12" small-device-size="8" medium-device-size="8"
+            large-device-size="9" padding="horizontal-small">
+            <div>
+                <h1>Name of the Loan applicant: {applicantName}</h1>
+                <template if:false={isCoApplicant}>
+                    <template if:true={isScoresAvailable}>
+                        <p>App Score Band - {appScoreBand}</p>
+                    </template>
+                </template>
+            </div>
+        </lightning-layout-item>
+        <template if:false={isScoresAvailable}>
+            <lightning-layout-item flexibility="auto" size="12" small-device-size="4" medium-device-size="4"
+                large-device-size="3" padding="horizontal-small">
+                <!-- <div class="slds-m-top_medium slds-text-align_right"> -->
+                    <lightning-button label="Refresh" icon-name="utility:refresh" variant="brand" stretch="true"
+                        onclick={handleRefresh}></lightning-button>
+                <!-- </div> -->
+            </lightning-layout-item>
+        </template>
+    </lightning-layout>
+    <!-- <div>
+        <h1>Name of the Loan applicant: {applicantName}</h1>
+        <p>App Score Band - {appScoreBand}</p>
+    </div> -->
+    <template if:true={isScoresAvailable}>
+        <div class="container">
+            <div class="graph-section">
+                <h1 class="slds-m-top_medium cibil-title">Applicant CIBIL Score</h1>
+                <c-axis-nano-reusable-gauge current-value={cibilValue}></c-axis-nano-reusable-gauge>
+                <div class="current-value">{cibilValue} CIBIL Score</div>
+                <div class="slds-m-top_medium slds-text-align_right">
+                    <!-- <a href="#" class="slds-button slds-button_brand" onclick={showModalBox}>View CIBIL Report</a> -->
+                    <template lwc:if={showCibilFilePreview}>
+                        <c-file-preview label="View CIBIL Report"
+                            document-id={cibilDocumentId}
+                            variant="brand"
+                            disabled={disableButton}
+                            file-type="html"
+                            is-community="true"
+                            version-id={contentVersionId}
+                            content-value={cibilContent}
+                            is-from-modal="false"
+                            open-preview = "true"
+                            >
+                        </c-file-preview>
+                    </template>
+                    <template lwc:else>
+                        <lightning-button label="View CIBIL report" name="View CIBIL Report" disabled={disableButton} icon-name="utility:preview" variant="brand" onclick={handlePreviewFile}></lightning-button>
+                    </template>
+                </div>
+            </div>
+            
+            <template if:true ={showCRIFscreen}>
+            <div class="graph-section">
+                <h1 class="slds-m-top_medium cibil-title">Applicant CRIF Score</h1>
+                <c-axis-nano-reusable-gauge current-value={crifValue}></c-axis-nano-reusable-gauge>
+                <div class="current-value">{crifValue} CRIF Score</div>
+                <div class="slds-m-top_medium slds-text-align_right">
+                    <!-- <a href="#" class="slds-button slds-button_brand" onclick={showModalBoxCrif}>View CRIF Report</a> -->
+                    <template lwc:if={showCrifFilePreview}>
+                        <c-file-preview label="View CRIF Report" 
+                            document-id={crifDocumentId} 
+                            variant="brand" 
+                            disabled={disableButton}
+                            file-type="html" 
+                            is-community="true" 
+                            version-id={crifVersionId} 
+                            content-value={crifContent}
+                            is-from-modal="false"
+                            open-preview = "true">
+                        </c-file-preview>
+                    </template>
+                    <template lwc:else>
+                        <lightning-button label="View CRIF report" name="View CRIF Report" disabled={disableButton} icon-name="utility:preview" variant="brand" onclick={handlePreviewFile}></lightning-button>
+                    </template>
+                    
+                </div>
+            </div>
+            </template>
+            <template if:false={isCoApplicant}>
+            <div class="green-box" if:true={isGreenBox}>
+                <h1>Approved</h1>
+                <p>Congratulations, the loan application is in-principle approved.</p>
+            </div>
+            <div class="yellow-box" if:true={isYellowBox}>
+                <h1>Refer</h1>
+                <!-- <p>The bureau meets the required threshold.</p>
+                <p>Please proceed ahead.</p> -->
+            </div>
+            <div class="red-box" if:true={isRedBox}>
+                <h1>Loan Rejected</h1>
+                <p>App score is below threshold, application rejected</p>
+            </div>
+            <div class="slds-m-top_large">
+                <lightning-button label="Refer To SM" if:true={showREButton} stretch="true" onclick={handleReferToSMClick}></lightning-button>
+            </div>
+        </template>
+            <div class="slds-m-top_large">
+                <lightning-button label="Proceed" variant="brand" stretch="true" onclick={navigateToRecordPage}></lightning-button>
+            </div>
+        </div>
+
+        <!-- modal for CIBIL Report -->
+        <template if:true={isShowModal}>
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-010" aria-modal="true"
+                aria-describedby="modal-content-id-10" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <!-- modal header start -->
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={hideModalBox}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse"
+                                size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-010" class="slds-text-heading_medium slds-hyphenate">Report</h2>
+                    </header>
+                    <!-- modal body start -->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <p>CIBIL Report</p>
+                    </div>
+                    <!-- modal footer start-->
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={hideModalBox}>Cancel</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- modal for CRIF Report -->
+        <template if:true={isShowModalCrif}>
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-2" aria-modal="true"
+                aria-describedby="modal-content-id-2" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <!-- modal header start -->
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title="Close" onclick={hideModalBoxCrif}>
+                            <lightning-icon icon-name="utility:close" alternative-text="close" variant="inverse"
+                                size="small"></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-2" class="slds-text-heading_medium slds-hyphenate">Report</h2>
+                    </header>
+                    <!-- modal body start -->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-2">
+                        <p>CRIF Report</p>
+                    </div>
+                    <!-- modal footer start-->
+                    <footer class="slds-modal__footer">
+                        <button class="slds-button slds-button_neutral" onclick={hideModalBoxCrif}>Cancel</button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Modal for CIBIL and CRIF Document now found error -->
+        <template if:true={showErrorPopup}>
+            <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01"
+                class="slds-modal slds-fade-in-open slds-modal_large">
+                <div class="slds-modal__container">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                        onclick={closeModal}>
+                        <lightning-icon icon-name="utility:close" variant="inverse" size="small"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <div class="slds-modal__header">
+                        <h1 id="modal-heading-01" class="slds-modal__title slds-hyphenate">File Preview</h1>
+                    </div>
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-3">
+                        <div style="color:red; font-weight: bold;align-items: center;">
+                            Report not yet fetched. Please try again after some time.
+                        </div> 
+                    </div>
+                </div>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open" role="presentation"></div>
+        </template>
+</template>
+    <template if:true={isLoading}>
+        <lightning-spinner alternative-text="Loading" variant="brand" size="Large"></lightning-spinner>
+    </template>
+</template>

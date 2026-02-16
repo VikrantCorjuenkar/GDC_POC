@@ -1,0 +1,55 @@
+.pageHeader, .pageFooter{
+    grid-area: header;
+    text-align: center;
+    margin: 0;
+    padding: 0.5em;
+    background: #A42E5B;
+    color: white;
+    font-size: 1.5em;
+}
+.supportingTextStyles {
+    color: #666666;
+    font-weight: 400;
+    font-size: 12px;
+    font-style: normal;
+    padding-top: 0.5rem;
+}
+.slds-dropdown-trigger_click .slds-dropdown {
+    width: 1500px;
+}
+.editbutton{
+    --sds-c-icon-color-background: #34b59d !important;
+}
+.white-color{
+    color:white;
+}
+.space{
+    justify-content: space-between;
+}
+.upload-icon {
+    --slds-c-icon-color-foreground-default: #33bce7 !important;
+}
+.preview-icon {
+    --slds-c-icon-color-foreground-default: #1dccbf !important;
+}
+.download-icon {
+    --slds-c-icon-color-foreground-default: #33bce7 !important;
+}
+.query-icon {
+    --slds-c-icon-color-foreground-default: #f2cf5b !important;
+}
+.docheader{
+    font-size: 1.17em !important;
+}
+.notapplicable-span {
+    border-radius: 3px;
+    background: red;
+    color: #fff;
+    font-size: 11px;
+    padding: 1px;
+    font-weight: bold;
+}
+.slds-box{
+    padding: 0 !important;
+    border: 0px !important;
+}

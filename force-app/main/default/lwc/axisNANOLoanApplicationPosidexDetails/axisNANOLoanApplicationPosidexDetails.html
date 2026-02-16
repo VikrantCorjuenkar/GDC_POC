@@ -1,0 +1,46 @@
+<!--
+  @description       : 
+  @author            : Amol
+  @group             : 
+  @last modified on  : 03-10-2024
+  @last modified by  : Amol
+  Modifications Log
+  Ver   Date         Author   Modification
+  1.0   03-08-2024   Amol   Initial Version
+-->
+<template>
+    <template if:true={showSpinner}>
+        <div class="slds-is-initial">
+            <lightning-spinner variant="brand" alternative-text="Loading"></lightning-spinner>
+        </div>
+    </template>
+    <div class="slds-card__header slds-grid">
+        <div class="slds-col slds-size_1-of-1 slds-card_boundary">
+            <lightning-card>
+                <lightning-accordion active-section-name={activeSections} allow-multiple-sections-open>
+                    <template for:each={loanApplicantTypeAndIdsMap} for:item="applicant">
+                        <div key={applicant.key}>
+                            <lightning-accordion-section name={applicant.key} label={applicant.key}>
+                                <lightning-accordion active-section-name={activeSections} allow-multiple-sections-open>
+                                    <template for:each={applicant.value} for:item="applt">
+                                        <div key={applt.applicantId}>
+                                            <lightning-accordion-section
+                                                name={applt.applicantName}
+                                                label={applt.applicantName}
+                                            >
+                                                <c-axis-n-a-n-o-loan-applicant-posidex-details
+                                                    record-id={applt.applicantId}
+                                                    applicant={applt} is-readonlyuser={isReadonlyuser}
+                                                ></c-axis-n-a-n-o-loan-applicant-posidex-details>
+                                            </lightning-accordion-section>
+                                        </div>
+                                    </template>
+                                </lightning-accordion>
+                            </lightning-accordion-section>
+                        </div>
+                    </template>
+                </lightning-accordion>
+            </lightning-card>
+        </div>
+    </div>
+</template>
