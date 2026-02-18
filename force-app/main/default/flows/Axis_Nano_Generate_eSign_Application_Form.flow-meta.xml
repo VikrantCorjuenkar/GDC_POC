@@ -86,7 +86,7 @@
             <targetReference>Loan_Application_Id</targetReference>
         </connector>
     </start>
-    <status>Active</status>
+    <status>Inactive</status>
     <variables>
         <name>recordId</name>
         <dataType>String</dataType>
