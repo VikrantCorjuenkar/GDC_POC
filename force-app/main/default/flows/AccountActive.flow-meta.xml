@@ -47,5 +47,5 @@
         <recordTriggerType>Create</recordTriggerType>
         <triggerType>RecordBeforeSave</triggerType>
     </start>
-    <status>Acitve</status>
+    <status>Inactive</status>
 </Flow>
