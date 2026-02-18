@@ -1549,7 +1549,7 @@
             <targetReference>Get_Loan_Application_Record</targetReference>
         </connector>
     </start>
-    <status>Active</status>
+    <status>Inactive</status> 
     <variables>
         <name>OwnerRecordId</name>
         <dataType>String</dataType>

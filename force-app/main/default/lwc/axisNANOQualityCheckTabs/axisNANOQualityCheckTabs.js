@@ -14,6 +14,7 @@ export default class AxisNANOQualityCheckTabs extends LightningElement {
     currentUser = userId;
     isReadOnlyUser = false;
     lstReadOnlyProfiles = ['Axis Internal Read Only','Axis External Read Only'];
+    check='hellow world';
 
     //BB-BB-25843 - Vikrant - Sprint 15 - start
     profileName;

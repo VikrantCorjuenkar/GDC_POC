@@ -92,6 +92,26 @@ if (-not (Test-CommandExists "node")) {
 Write-Host "  ✅ Node Ready" -ForegroundColor Green
 
 # ------------------------------
+# 3.5 INSTALL PROJECT NPM DEPENDENCIES
+# ------------------------------
+Write-Host "[3.5/7] Installing project npm dependencies..." -ForegroundColor Cyan
+
+$packageJsonPath = Join-Path $RepoRoot "package.json"
+
+if (Test-Path $packageJsonPath) {
+    Write-Host "  📦 package.json found. Running npm install..." -ForegroundColor Yellow
+    
+    Push-Location $RepoRoot
+    npm install
+    Pop-Location
+
+    Write-Host "  ✅ npm dependencies installed." -ForegroundColor Green
+}
+else {
+    Write-Host "  ℹ️ No package.json found. Skipping npm install." -ForegroundColor DarkGray
+}
+
+# ------------------------------
 # 4. SALESFORCE CLI
 # ------------------------------
 Write-Host "[4/7] Checking Salesforce CLI..." -ForegroundColor Cyan
