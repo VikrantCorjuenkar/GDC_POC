@@ -16,7 +16,6 @@ public with sharing class AxisNanoFetchAccountDetails {
         recID
       );
       
-      
 
       ResponseWrap wrap = new ResponseWrap();
       AxisNanoFetchAccountDetailsWrap respon = new AxisNanoFetchAccountDetailsWrap();
