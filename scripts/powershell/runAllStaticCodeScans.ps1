@@ -30,18 +30,13 @@ function Get-GitAuthor {
     }
 }
 
-# --- HELPER FUNCTION: Get Unpushed Files ---
-function Get-UnpushedFiles {
+# --- HELPER FUNCTION: Get Files From CURRENT COMMIT (STAGED FILES) ---
+function Get-StagedFiles {
 
-    Write-Host "🔍 Detecting unpushed files..." -ForegroundColor Cyan
+    Write-Host "🔍 Detecting staged files for current commit..." -ForegroundColor Cyan
 
-    $currentBranch = git rev-parse --abbrev-ref HEAD
-
-    # Fetch latest remote state
-    git fetch origin $currentBranch 2>$null
-
-    # Get files different from remote branch
-    $files = git diff --name-only origin/$currentBranch
+    # Get only files staged for commit
+    $files = git diff --cached --name-only
 
     # Filter only force-app files
     $filtered = $files | Where-Object { $_ -like "force-app/*" }
@@ -62,6 +57,8 @@ function Create-DeltaFolder {
     New-Item -ItemType Directory -Path $deltaFolder | Out-Null
 
     foreach ($file in $Files) {
+
+        if (-not (Test-Path $file)) { continue }
 
         $destinationPath = Join-Path $deltaFolder $file
         $destinationDir = Split-Path $destinationPath -Parent
@@ -169,7 +166,7 @@ function Run-ScanAndEnrich {
 
 # --- MAIN EXECUTION ---
 
-Write-Host "🚀 Starting Delta Code Scan..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Commit-Level Code Scan..." -ForegroundColor Cyan
 
 # Clean old results
 if (Test-Path "./scanResults/") {
@@ -202,11 +199,11 @@ if (Test-Path $configPath) {
     (Get-Content $configPath).Replace('!**/*-meta.xml', '**/*-meta.xml') | Set-Content $configPath
 }
 
-# Get Changed Files
-$changedFiles = Get-UnpushedFiles
+# 🔥 Get staged files
+$changedFiles = Get-StagedFiles
 
 if (-not $changedFiles -or $changedFiles.Count -eq 0) {
-    Write-Host "✅ No unpushed Salesforce changes detected. Skipping scans." -ForegroundColor Green
+    Write-Host "✅ No staged Salesforce changes detected. Skipping scans." -ForegroundColor Green
     exit 0
 }
 
