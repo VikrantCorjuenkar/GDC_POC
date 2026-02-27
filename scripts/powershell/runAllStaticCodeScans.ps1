@@ -239,7 +239,7 @@ if (Test-Path $deltaFolder) {
 }
 # --- COPY TO GOOGLE DRIVE ---
 # IMPORTANT: Update this path to your exact Google Drive location
-$DrivePath = "/Users/vcorjuenkar/Google Drive/GDC PMD violations Report"
+$DrivePath = "/Users/vcorjuenkar/GDC POC"
 
 if (Test-Path $DrivePath) {
     Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
