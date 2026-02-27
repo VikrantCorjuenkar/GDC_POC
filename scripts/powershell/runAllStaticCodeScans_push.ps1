@@ -30,13 +30,17 @@ function Get-GitAuthor {
     }
 }
 
-# --- HELPER FUNCTION: Get Files From CURRENT COMMIT (STAGED FILES) ---
-function Get-StagedFiles {
+# --- HELPER FUNCTION: Get Unpushed Files ---
+function Get-UnpushedFiles {
+    Write-Host "🔍 Detecting unpushed files..." -ForegroundColor Cyan
 
-    Write-Host "🔍 Detecting staged files for current commit..." -ForegroundColor Cyan
+    $currentBranch = git rev-parse --abbrev-ref HEAD
 
-    # Get only files staged for commit
-    $files = git diff --cached --name-only
+    # Fetch latest remote state
+    git fetch origin $currentBranch 2>$null
+
+    # Get files different from remote branch
+    $files = git diff --name-only origin/$currentBranch
 
     # Filter only force-app files
     $filtered = $files | Where-Object { $_ -like "force-app/*" }
@@ -73,7 +77,7 @@ function Create-DeltaFolder {
     Write-Host "📂 Delta folder created at ./$deltaFolder" -ForegroundColor Green
 }
 
-# --- HELPER FUNCTION: Run Scan & Enrich ---
+# --- HELPER FUNCTION: Run Scan & Enrich with Author ---
 function Run-ScanAndEnrich {
     param (
         [string]$ScanType,
@@ -164,17 +168,17 @@ function Run-ScanAndEnrich {
     }
 }
 
-# --- MAIN EXECUTION ---
+# --- MAIN SCRIPT EXECUTION ---
 
-Write-Host "🚀 Starting Commit-Level Code Scan..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
 
-# Clean old results
-if (Test-Path "./scanResults/") {
+# 1. Clean up old results
+if (Test-Path -Path "./scanResults/") {
     Remove-Item "./scanResults/" -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path "./scanResults" | Out-Null
 
-# Determine Ruleset
+# 2. Determine Ruleset
 if ($scanMode -eq 'F') {
     $pmdRuleSet = "./scripts/pmd/rulesets/full_scan.xml"
     Write-Host "   Mode: FULL SCAN" -ForegroundColor Yellow
@@ -185,7 +189,7 @@ else {
     New-Item -ItemType Directory -Force -Path "./scripts/pmd/results" | Out-Null
 }
 
-# Add Custom Rules
+# 3. Add Custom Rules (if present)
 if (Test-Path "./scripts/pmd/category/xml/xml_custom_rules.xml") {
     sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" 2>$null
 }
@@ -193,21 +197,22 @@ if (Test-Path "./scripts/pmd/category/apex/apex_custom_rules.xml") {
     sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" 2>$null
 }
 
-# Fix Config.json
+# 4. Fix Config.json
 $configPath = "$HOME/.sfdx-scanner/Config.json"
 if (Test-Path $configPath) {
     (Get-Content $configPath).Replace('!**/*-meta.xml', '**/*-meta.xml') | Set-Content $configPath
 }
 
-# 🔥 Get staged files
-$changedFiles = Get-StagedFiles
+# --- EXECUTE SCANS (ONLY UNPUSHED FILES) ---
+
+$changedFiles = Get-UnpushedFiles
 
 if (-not $changedFiles -or $changedFiles.Count -eq 0) {
-    Write-Host "✅ No staged Salesforce changes detected. Skipping scans." -ForegroundColor Green
+    Write-Host "✅ No unpushed Salesforce changes detected. Skipping scans." -ForegroundColor Green
     exit 0
 }
 
-Write-Host "📂 Files to include in delta:" -ForegroundColor Cyan
+Write-Host "📂 Files to be scanned:" -ForegroundColor Cyan
 $changedFiles | ForEach-Object { Write-Host "   - $_" }
 
 # Create Delta Folder
@@ -215,18 +220,21 @@ Create-DeltaFolder -Files $changedFiles
 
 # --- RUN SCANS ON DELTA FOLDER ---
 
+# A. Run Apex PMD
 Run-ScanAndEnrich -ScanType "Apex PMD" `
     -Target "./changed-sources/force-app/" `
     -Engine "pmd" `
     -ConfigFile $pmdRuleSet `
     -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
 
+# B. Run JS ESLint
 Run-ScanAndEnrich -ScanType "JS ESLint" `
     -Target "./changed-sources/force-app/**/*.js" `
     -Engine "eslint-lwc" `
     -ConfigFile "./scripts/eslint/.eslintrc.json" `
     -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
 
+# C. Run Flow Scan
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
 sf flow scan -d "./changed-sources/force-app/" | Out-File "./scanResults/flowScan.json"
 
@@ -239,7 +247,7 @@ if (Test-Path $deltaFolder) {
 }
 # --- COPY TO GOOGLE DRIVE ---
 # IMPORTANT: Update this path to your exact Google Drive location
-$DrivePath = "/Users/vcorjuenkar/GDC POC"
+$DrivePath = "/Users/vcorjuenkar/Google Drive/GDC PMD violations Report"
 
 if (Test-Path $DrivePath) {
     Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
@@ -259,6 +267,6 @@ if (Test-Path $DrivePath) {
 
 # --- EXIT WITH ERROR IF VIOLATIONS WERE FOUND ---
 if ($global:TotalViolations -gt 0) {
-    Write-Host "⛔ FATAL: $global:TotalViolations violations found." -ForegroundColor Red
+    Write-Host "⛔ FATAL: $global:TotalViolations violations found across all scans." -ForegroundColor Red
     exit 1
 }
