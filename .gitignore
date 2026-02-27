@@ -3,6 +3,5 @@
 node_modules
 coverage
 .env
-scanResults
 Final Docs to be shared
 package-lock.json
