@@ -5,3 +5,4 @@ coverage
 .env
 Final Docs to be shared
 package-lock.json
+.DS_Store
