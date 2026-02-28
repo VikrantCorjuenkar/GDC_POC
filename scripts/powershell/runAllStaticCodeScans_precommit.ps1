@@ -8,6 +8,37 @@ Param(
 $global:TotalViolations = 0
 $deltaFolder = "changed-sources"
 
+# Force non-interactive/plain CLI output in git-hook context
+$env:CI = "true"
+$env:TERM = "dumb"
+$env:FORCE_COLOR = "0"
+
+function Resolve-RepoPath {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path)) { return "" }
+
+    $normalized = $Path -replace "\\", "/"
+    $normalized = $normalized -replace "^\./", ""
+
+    if ($normalized.StartsWith("a/") -or $normalized.StartsWith("b/")) {
+        $normalized = $normalized.Substring(2)
+    }
+
+    # Handle absolute scanner paths like:
+    # /.../changed-sources/force-app/main/default/classes/Foo.cls
+    if ($normalized -match ".*/$deltaFolder/(.+)$") {
+        $normalized = $Matches[1]
+    }
+
+    # If path still contains force-app at any depth, trim to repo-relative path.
+    if ($normalized -match ".*(force-app/.+)$") {
+        $normalized = $Matches[1]
+    }
+
+    return $normalized
+}
+
 # --- HELPER FUNCTION: Get Git Author ---
 function Get-GitAuthor {
     param (
@@ -42,6 +73,41 @@ function Get-StagedFiles {
     $filtered = $files | Where-Object { $_ -like "force-app/*" }
 
     return $filtered
+}
+
+# --- HELPER FUNCTION: Get staged changed line numbers per file ---
+function Get-StagedChangedLines {
+    Write-Host "🧮 Calculating changed line numbers from staged diff..." -ForegroundColor Cyan
+
+    $lineMap = @{}
+    $currentFile = $null
+    $diffOutput = git diff --cached --unified=0 -- "force-app/"
+
+    foreach ($line in $diffOutput) {
+        if ($line -match "^\+\+\+ b/(.+)$") {
+            $currentFile = Resolve-RepoPath -Path $Matches[1]
+            if (-not $lineMap.ContainsKey($currentFile)) {
+                $lineMap[$currentFile] = New-Object "System.Collections.Generic.HashSet[int]"
+            }
+            continue
+        }
+
+        if ($line -match "^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@") {
+            if (-not $currentFile) { continue }
+
+            $start = [int]$Matches[1]
+            $count = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+
+            # count can be 0 for deletion-only hunks; these do not map to a new-file line
+            if ($count -le 0) { continue }
+
+            for ($i = 0; $i -lt $count; $i++) {
+                [void]$lineMap[$currentFile].Add($start + $i)
+            }
+        }
+    }
+
+    return $lineMap
 }
 
 # --- HELPER FUNCTION: Create Delta Folder ---
@@ -80,9 +146,11 @@ function Run-ScanAndEnrich {
         [string]$Target,
         [string]$Engine,
         [string]$ConfigFile,
-        [string]$OutCsvPath
+        [string]$OutCsvPath,
+        [hashtable]$ChangedLinesByFile
     )
 
+    Write-Host ""
     Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
 
     # FIX: Generate a temp file that explicitly ends in .json
@@ -96,6 +164,8 @@ function Run-ScanAndEnrich {
         } else {
             sf scanner run --target $Target --engine $Engine --eslintconfig $ConfigFile --format json --outfile $tempJsonFile
         }
+        # Keep logs readable even when native CLI omits trailing newline
+        Write-Host ""
     }
 
     # 2. Read and Parse JSON from the file
@@ -126,16 +196,29 @@ function Run-ScanAndEnrich {
     }
 
     $finalReport = @()
+    $rawViolations = 0
 
     # 3. Iterate Violations and Fetch Git Author
     foreach ($file in $jsonObj) {
         $fileName = $file.fileName
+        $normalizedFileName = Resolve-RepoPath -Path $fileName
+
+        if (-not $ChangedLinesByFile.ContainsKey($normalizedFileName)) {
+            continue
+        }
+
+        $changedLines = $ChangedLinesByFile[$normalizedFileName]
         
         foreach ($violation in $file.violations) {
+            $rawViolations++
             $line = $violation.line
+
+            if (-not $changedLines.Contains([int]$line)) {
+                continue
+            }
             
-            # Call Git Blame
-            $devName = Get-GitAuthor -FilePath $fileName -LineNumber $line
+            # Call Git Blame on repo-relative path
+            $devName = Get-GitAuthor -FilePath $normalizedFileName -LineNumber $line
 
             # NEW: Add 'Date Reported' and 'Project' columns here
             $row = [PSCustomObject]@{
@@ -162,11 +245,16 @@ function Run-ScanAndEnrich {
     } else {
         Write-Host "   ✅ Clean code! No violations found." -ForegroundColor Green
     }
+
+    if ($rawViolations -gt $count) {
+        Write-Host "   ℹ️ Ignored $($rawViolations - $count) violations outside staged changed lines." -ForegroundColor DarkGray
+    }
 }
 
 # --- MAIN EXECUTION ---
 
 Write-Host "🚀 Starting Commit-Level Code Scan..." -ForegroundColor Cyan
+Write-Host ""
 
 # Clean old results
 if (Test-Path "./scanResults/") {
@@ -187,10 +275,10 @@ else {
 
 # Add Custom Rules
 if (Test-Path "./scripts/pmd/category/xml/xml_custom_rules.xml") {
-    sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" 2>$null
+    sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" --json > $null 2>&1
 }
 if (Test-Path "./scripts/pmd/category/apex/apex_custom_rules.xml") {
-    sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" 2>$null
+    sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" --json > $null 2>&1
 }
 
 # Fix Config.json
@@ -201,9 +289,15 @@ if (Test-Path $configPath) {
 
 # 🔥 Get staged files
 $changedFiles = Get-StagedFiles
+$changedLinesByFile = Get-StagedChangedLines
 
 if (-not $changedFiles -or $changedFiles.Count -eq 0) {
     Write-Host "✅ No staged Salesforce changes detected. Skipping scans." -ForegroundColor Green
+    exit 0
+}
+
+if (-not $changedLinesByFile -or $changedLinesByFile.Count -eq 0) {
+    Write-Host "✅ No staged added/modified Salesforce lines detected. Skipping scans." -ForegroundColor Green
     exit 0
 }
 
@@ -219,16 +313,19 @@ Run-ScanAndEnrich -ScanType "Apex PMD" `
     -Target "./changed-sources/force-app/" `
     -Engine "pmd" `
     -ConfigFile $pmdRuleSet `
-    -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
+    -OutCsvPath "./scanResults/Apex_PMD_codescan.csv" `
+    -ChangedLinesByFile $changedLinesByFile
 
 Run-ScanAndEnrich -ScanType "JS ESLint" `
     -Target "./changed-sources/force-app/**/*.js" `
     -Engine "eslint-lwc" `
     -ConfigFile "./scripts/eslint/.eslintrc.json" `
-    -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
+    -OutCsvPath "./scanResults/JS_ESLint_codescan.csv" `
+    -ChangedLinesByFile $changedLinesByFile
 
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
 sf flow scan -d "./changed-sources/force-app/" | Out-File "./scanResults/flowScan.json"
+Write-Host ""
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
 

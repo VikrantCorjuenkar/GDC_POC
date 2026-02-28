@@ -20,7 +20,7 @@ public with sharing class AxisNanoFetchAccountDetails {
       ResponseWrap wrap = new ResponseWrap();
       AxisNanoFetchAccountDetailsWrap respon = new AxisNanoFetchAccountDetailsWrap();
       if (resp.statusCode == 200) {
-        Map<String, Object> tempResponse222 = (Map<String, Object>) JSON.deserializeUntyped(
+        Map<String, Object> tempResponse22 = (Map<String, Object>) JSON.deserializeUntyped(
           resp.checklistRecord.axisltd_Response__c
         );
 
