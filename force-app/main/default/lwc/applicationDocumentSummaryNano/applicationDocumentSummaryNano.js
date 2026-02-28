@@ -618,5 +618,10 @@ export default class ApplicationDocumentSummaryNano extends LightningElement {
         setTimeout(() => console.log('eslint test line'), 0);
         this.template.querySelector('div').innerHTML = 'eslint test';
     }
+
+    precommitLineLevelCleanTest() {
+        const label = 'precommit-clean-change';
+        return label;
+    }
     /*Avinash code end */
 }
