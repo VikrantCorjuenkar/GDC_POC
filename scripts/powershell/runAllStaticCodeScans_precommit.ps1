@@ -152,24 +152,75 @@ function Get-StagedChangedLines {
     return $lineMap
 }
 
-function Get-FlowViolationCount {
-    param([string]$FlowReportPath)
+function Resolve-FlowRepoPath {
+    param(
+        [string]$FlowFileName,
+        [hashtable]$ChangedLinesByFile
+    )
+
+    if ([string]::IsNullOrWhiteSpace($FlowFileName)) {
+        return $null
+    }
+
+    if ($ChangedLinesByFile.ContainsKey($FlowFileName)) {
+        return $FlowFileName
+    }
+
+    foreach ($path in $ChangedLinesByFile.Keys) {
+        if ($path.EndsWith("/$FlowFileName")) {
+            return $path
+        }
+    }
+
+    return $null
+}
+
+function Get-FlowViolationCounts {
+    param(
+        [string]$FlowReportPath,
+        [hashtable]$ChangedLinesByFile
+    )
+
+    $counts = [PSCustomObject]@{
+        TotalViolations       = 0
+        ChangedLineViolations = 0
+    }
 
     if (-not (Test-Path $FlowReportPath)) {
-        return 0
+        return $counts
     }
 
-    $reportText = Get-Content $FlowReportPath -Raw
-    if ([string]::IsNullOrWhiteSpace($reportText)) {
-        return 0
+    $lines = Get-Content $FlowReportPath
+    if (-not $lines -or $lines.Count -eq 0) {
+        return $counts
     }
 
-    $totalMatch = [regex]::Match($reportText, "=== Total:\s*(\d+)\s*Results")
-    if ($totalMatch.Success) {
-        return [int]$totalMatch.Groups[1].Value
+    $currentFlowRepoPath = $null
+
+    foreach ($line in $lines) {
+        if ($line -match "^=== Flow: .+\(([^)]+\.flow-meta\.xml)\) \(\d+ results\)") {
+            $flowFileName = $Matches[1]
+            $currentFlowRepoPath = Resolve-FlowRepoPath -FlowFileName $flowFileName -ChangedLinesByFile $ChangedLinesByFile
+            continue
+        }
+
+        if ($line -match "^\s*Rule\s+Severity\s+Type\s+Name\s+Line\s+Column\s+Message") { continue }
+        if ($line -match "^-{5,}") { continue }
+
+        if ($line -match "^\s*(\S+)\s+\S+\s+\S+\s+.+?\s+(\d+)\s+(\d+)\s+.+$") {
+            $counts.TotalViolations++
+
+            $lineNumber = [int]$Matches[2]
+            if ($currentFlowRepoPath -and $ChangedLinesByFile.ContainsKey($currentFlowRepoPath)) {
+                $changedLines = $ChangedLinesByFile[$currentFlowRepoPath]
+                if ($changedLines.Contains($lineNumber)) {
+                    $counts.ChangedLineViolations++
+                }
+            }
+        }
     }
 
-    return 0
+    return $counts
 }
 
 function Get-FlowSummaryLine {
@@ -405,14 +456,20 @@ $flowReportPath = "./scanResults/flowScan.json"
 sf flow scan -d "./changed-sources/force-app/" | Out-File -FilePath $flowReportPath -Encoding UTF8
 $flowSummary = Get-FlowSummaryLine -FlowReportPath $flowReportPath
 Write-Host "   $flowSummary" -ForegroundColor DarkGray
-$flowViolations = Get-FlowViolationCount -FlowReportPath $flowReportPath
+$flowCounts = Get-FlowViolationCounts -FlowReportPath $flowReportPath -ChangedLinesByFile $changedLinesByFile
+$flowChangedViolations = $flowCounts.ChangedLineViolations
+$flowTotalViolations = $flowCounts.TotalViolations
 
-if ($flowViolations -gt 0) {
-    Write-Host "   ❌ Found $flowViolations flow violations! Saved to: $flowReportPath" -ForegroundColor Red
-    $global:TotalViolations += $flowViolations
+if ($flowChangedViolations -gt 0) {
+    Write-Host "   ❌ Found $flowChangedViolations flow violations on staged changed lines! Saved to: $flowReportPath" -ForegroundColor Red
+    $global:TotalViolations += $flowChangedViolations
 }
 else {
     Write-Host "   ✅ Clean flow scan! No violations found." -ForegroundColor Green
+}
+
+if ($flowTotalViolations -gt $flowChangedViolations) {
+    Write-Host "   ℹ️ Ignored $($flowTotalViolations - $flowChangedViolations) flow violations outside staged changed lines." -ForegroundColor DarkGray
 }
 Write-Host ""
 
