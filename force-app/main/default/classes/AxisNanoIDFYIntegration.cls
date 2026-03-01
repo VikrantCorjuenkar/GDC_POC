@@ -13,7 +13,7 @@ public class AxisNanoIDFYIntegration extends IntegrationInterface
 	public override String invokeForNANO(Object param)
 	{      
         execute(String.valueOf(param));
-        return 'SUCCESS'; 
+        return 'SUCCESS 1'; 
     }    
     public static void execute(String recordId)
     {
