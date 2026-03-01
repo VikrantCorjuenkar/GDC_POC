@@ -105,9 +105,6 @@ function Get-GitAuthor {
 
 # --- HELPER FUNCTION: Get Files From CURRENT COMMIT (STAGED FILES) ---
 function Get-StagedFiles {
-
-    Write-Host "🔍 Detecting staged files for current commit..." -ForegroundColor Cyan
-
     # Get only files staged for commit
     $files = git diff --cached --name-only
 
@@ -119,8 +116,6 @@ function Get-StagedFiles {
 
 # --- HELPER FUNCTION: Get staged changed line numbers per file ---
 function Get-StagedChangedLines {
-    Write-Host "🧮 Calculating changed line numbers from staged diff..." -ForegroundColor Cyan
-
     $lineMap = @{}
     $currentFile = $null
     $diffOutput = git diff --cached --unified=0 -- "force-app/"
@@ -278,8 +273,7 @@ function Run-ScanAndEnrich {
         [hashtable]$ChangedLinesByFile
     )
 
-    Write-Host ""
-    Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
+    Write-Host "• Checking $ScanType..." -ForegroundColor Yellow
 
     # FIX: Generate a temp file that explicitly ends in .json
     $tempFileName = "SFScan_$(Get-Random).json"
@@ -288,12 +282,10 @@ function Run-ScanAndEnrich {
     # 1. Run Scanner (Output to Temp JSON File)
     if ($ConfigFile) {
         if ($Engine -eq "pmd") {
-            sf scanner run --target $Target --engine $Engine --pmdconfig $ConfigFile --format json --outfile $tempJsonFile
+            sf scanner run --target $Target --engine $Engine --pmdconfig $ConfigFile --format json --outfile $tempJsonFile 2>$null | Out-Null
         } else {
-            sf scanner run --target $Target --engine $Engine --eslintconfig $ConfigFile --format json --outfile $tempJsonFile
+            sf scanner run --target $Target --engine $Engine --eslintconfig $ConfigFile --format json --outfile $tempJsonFile 2>$null | Out-Null
         }
-        # Keep logs readable even when native CLI omits trailing newline
-        Write-Host ""
     }
 
     # 2. Read and Parse JSON from the file
@@ -366,23 +358,22 @@ function Run-ScanAndEnrich {
 
     # 4. Export and Count
     $count = $finalReport.Count
+    $ignoredCount = $rawViolations - $count
     if ($count -gt 0) {
         $finalReport | Export-Csv -Path $OutCsvPath -NoTypeInformation
-        Write-Host "   ❌ Found $count violations! Saved to: $OutCsvPath" -ForegroundColor Red
+        Write-Host "   ❌ $ScanType failed: $count violation(s) on staged changed lines." -ForegroundColor Red
         $global:TotalViolations += $count
     } else {
-        Write-Host "   ✅ Clean code! No violations found." -ForegroundColor Green
+        Write-Host "   ✅ $ScanType passed: no violations on staged changed lines." -ForegroundColor Green
     }
 
-    if ($rawViolations -gt $count) {
-        Write-Host "   ℹ️ Ignored $($rawViolations - $count) violations outside staged changed lines." -ForegroundColor DarkGray
+    if ($ignoredCount -gt 0) {
+        Write-Host "   ℹ️ Ignored $ignoredCount violation(s) outside staged changed lines." -ForegroundColor DarkGray
     }
 }
 
 # --- MAIN EXECUTION ---
 
-Write-Host "🚀 Starting Commit-Level Code Scan..." -ForegroundColor Cyan
-Write-Host ""
 
 # Clean old results
 if (Test-Path "./scanResults/") {
@@ -451,9 +442,9 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
     -OutCsvPath "./scanResults/JS_ESLint_codescan.csv" `
     -ChangedLinesByFile $changedLinesByFile
 
-Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
+Write-Host "• Checking Flow Scan..." -ForegroundColor Yellow
 $flowReportPath = "./scanResults/flowScan.json"
-sf flow scan -d "./changed-sources/force-app/" | Out-File -FilePath $flowReportPath -Encoding UTF8
+sf flow scan -d "./changed-sources/force-app/" 2>$null | Out-File -FilePath $flowReportPath -Encoding UTF8
 $flowSummary = Get-FlowSummaryLine -FlowReportPath $flowReportPath
 Write-Host "   $flowSummary" -ForegroundColor DarkGray
 $flowCounts = Get-FlowViolationCounts -FlowReportPath $flowReportPath -ChangedLinesByFile $changedLinesByFile
@@ -461,24 +452,19 @@ $flowChangedViolations = $flowCounts.ChangedLineViolations
 $flowTotalViolations = $flowCounts.TotalViolations
 
 if ($flowChangedViolations -gt 0) {
-    Write-Host "   ❌ Found $flowChangedViolations flow violations on staged changed lines! Saved to: $flowReportPath" -ForegroundColor Red
+    Write-Host "   ❌ Flow Scan failed: $flowChangedViolations violation(s) on staged changed lines." -ForegroundColor Red
     $global:TotalViolations += $flowChangedViolations
 }
 else {
-    Write-Host "   ✅ Clean flow scan! No violations found." -ForegroundColor Green
+    Write-Host "   ✅ Flow Scan passed: no violations on staged changed lines." -ForegroundColor Green
 }
 
 if ($flowTotalViolations -gt $flowChangedViolations) {
     Write-Host "   ℹ️ Ignored $($flowTotalViolations - $flowChangedViolations) flow violations outside staged changed lines." -ForegroundColor DarkGray
 }
-Write-Host ""
-
-Write-Host "✅ Scans Complete." -ForegroundColor Green
-
 # Cleanup Delta Folder
 if (Test-Path $deltaFolder) {
     Remove-Item $deltaFolder -Recurse -Force
-    Write-Host "🧹 Cleaned up delta folder." -ForegroundColor DarkGray
 }
 # --- COPY TO GOOGLE DRIVE ---
 # IMPORTANT: Update this path to your exact Google Drive location
