@@ -7,6 +7,12 @@ Param(
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
 $deltaFolder = "changed-sources"
+$global:CurrentDeveloper = $null
+$projectName = if (-not [string]::IsNullOrWhiteSpace($env:PROJECT_NAME)) {
+    $env:PROJECT_NAME
+} else {
+    Split-Path -Leaf (Get-Location).Path
+}
 
 # Force non-interactive/plain CLI output in git-hook context
 $env:CI = "true"
@@ -39,6 +45,38 @@ function Resolve-RepoPath {
     return $normalized
 }
 
+function Get-CurrentDeveloper {
+    if (-not [string]::IsNullOrWhiteSpace($global:CurrentDeveloper)) {
+        return $global:CurrentDeveloper
+    }
+
+    try {
+        $gitUserName = (git config user.name 2>$null | Out-String).Trim()
+        if (-not [string]::IsNullOrWhiteSpace($gitUserName)) {
+            $global:CurrentDeveloper = $gitUserName
+            return $global:CurrentDeveloper
+        }
+    } catch {}
+
+    if (-not [string]::IsNullOrWhiteSpace($env:GIT_AUTHOR_NAME)) {
+        $global:CurrentDeveloper = $env:GIT_AUTHOR_NAME
+        return $global:CurrentDeveloper
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:USERNAME)) {
+        $global:CurrentDeveloper = $env:USERNAME
+        return $global:CurrentDeveloper
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:USER)) {
+        $global:CurrentDeveloper = $env:USER
+        return $global:CurrentDeveloper
+    }
+
+    $global:CurrentDeveloper = "Unknown"
+    return $global:CurrentDeveloper
+}
+
 # --- HELPER FUNCTION: Get Git Author ---
 function Get-GitAuthor {
     param (
@@ -52,12 +90,16 @@ function Get-GitAuthor {
         # Extract the line starting with "author "
         $authorLine = $blameInfo | Select-String "^author "
         if ($authorLine) {
-            return $authorLine.ToString().Substring(7) # Remove "author " prefix
+            $author = $authorLine.ToString().Substring(7) # Remove "author " prefix
+            if ($author -eq "Not Committed Yet") {
+                return Get-CurrentDeveloper
+            }
+            return $author
         }
-        return "Unknown"
+        return Get-CurrentDeveloper
     }
     catch {
-        return "Unknown"
+        return Get-CurrentDeveloper
     }
 }
 
@@ -108,6 +150,41 @@ function Get-StagedChangedLines {
     }
 
     return $lineMap
+}
+
+function Get-FlowViolationCount {
+    param([string]$FlowReportPath)
+
+    if (-not (Test-Path $FlowReportPath)) {
+        return 0
+    }
+
+    $reportText = Get-Content $FlowReportPath -Raw
+    if ([string]::IsNullOrWhiteSpace($reportText)) {
+        return 0
+    }
+
+    $totalMatch = [regex]::Match($reportText, "=== Total:\s*(\d+)\s*Results")
+    if ($totalMatch.Success) {
+        return [int]$totalMatch.Groups[1].Value
+    }
+
+    return 0
+}
+
+function Get-FlowSummaryLine {
+    param([string]$FlowReportPath)
+
+    if (-not (Test-Path $FlowReportPath)) {
+        return "Total: 0 Results in 0 Flows."
+    }
+
+    $summaryMatch = Select-String -Path $FlowReportPath -Pattern "^=== Total:\s*(.+)$" | Select-Object -First 1
+    if ($summaryMatch) {
+        return $summaryMatch.Matches[0].Groups[1].Value.Trim()
+    }
+
+    return "Total: 0 Results in 0 Flows."
 }
 
 # --- HELPER FUNCTION: Create Delta Folder ---
@@ -223,7 +300,7 @@ function Run-ScanAndEnrich {
             # NEW: Add 'Date Reported' and 'Project' columns here
             $row = [PSCustomObject]@{
                 "Date Reported" = Get-Date -Format "yyyy-MM-dd"
-                "Project"       = "Lumen"
+                "Project"       = $projectName
                 "Developer"     = $devName
                 "Severity"      = $violation.severity
                 "Rule"          = $violation.ruleName
@@ -275,10 +352,10 @@ else {
 
 # Add Custom Rules
 if (Test-Path "./scripts/pmd/category/xml/xml_custom_rules.xml") {
-    sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" --json > $null 2>&1
+    sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" --json 2>$null | Out-Null
 }
 if (Test-Path "./scripts/pmd/category/apex/apex_custom_rules.xml") {
-    sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" --json > $null 2>&1
+    sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" --json 2>$null | Out-Null
 }
 
 # Fix Config.json
@@ -324,7 +401,19 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
     -ChangedLinesByFile $changedLinesByFile
 
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
-sf flow scan -d "./changed-sources/force-app/" | Out-File "./scanResults/flowScan.json"
+$flowReportPath = "./scanResults/flowScan.json"
+sf flow scan -d "./changed-sources/force-app/" | Out-File -FilePath $flowReportPath -Encoding UTF8
+$flowSummary = Get-FlowSummaryLine -FlowReportPath $flowReportPath
+Write-Host "   $flowSummary" -ForegroundColor DarkGray
+$flowViolations = Get-FlowViolationCount -FlowReportPath $flowReportPath
+
+if ($flowViolations -gt 0) {
+    Write-Host "   ❌ Found $flowViolations flow violations! Saved to: $flowReportPath" -ForegroundColor Red
+    $global:TotalViolations += $flowViolations
+}
+else {
+    Write-Host "   ✅ Clean flow scan! No violations found." -ForegroundColor Green
+}
 Write-Host ""
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
