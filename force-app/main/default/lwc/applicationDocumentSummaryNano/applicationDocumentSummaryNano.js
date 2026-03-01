@@ -613,7 +613,12 @@ export default class ApplicationDocumentSummaryNano extends LightningElement {
         return (val != '' && val != null && val != undefined) ;
     }
 
-
+    // Temporary method to validate line-level ESLint blocking in pre-commit hook.
+    eslintScannerLineLevelTest() {
+        setTimeout(() => console.log('eslint test line'), 0);
+        this.template.querySelector('div').innerHTML = 'eslint test';
+        this.template.querySelector('span').innerHTML = 'eslint test second change';
+    }
 
     precommitLineLevelCleanTest() {
         const label = 'precommit-clean-change';
