@@ -19,6 +19,60 @@ $env:CI = "true"
 $env:TERM = "dumb"
 $env:FORCE_COLOR = "0"
 
+$repoRoot = try {
+    (git rev-parse --show-toplevel 2>$null | Out-String).Trim()
+} catch {
+    ""
+}
+if ([string]::IsNullOrWhiteSpace($repoRoot)) {
+    $repoRoot = (Get-Location).Path
+}
+$governanceConfigPath = Join-Path $repoRoot ".governance.local.json"
+
+function Get-GovernanceSyncSettings {
+    param([string]$ConfigPath)
+
+    $settings = [PSCustomObject]@{
+        Enabled = $true
+        Path    = $null
+        Source  = "default"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:SCAN_SYNC_ENABLED)) {
+        $parsedBool = $null
+        if ([bool]::TryParse($env:SCAN_SYNC_ENABLED, [ref]$parsedBool)) {
+            $settings.Enabled = $parsedBool
+            $settings.Source = "env:SCAN_SYNC_ENABLED"
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:SCAN_SYNC_PATH)) {
+        $settings.Path = $env:SCAN_SYNC_PATH
+        $settings.Source = "env:SCAN_SYNC_PATH"
+    }
+    elseif (Test-Path $ConfigPath) {
+        try {
+            $localConfig = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+
+            if ($null -ne $localConfig.syncEnabled) {
+                $settings.Enabled = [bool]$localConfig.syncEnabled
+                $settings.Source = ".governance.local.json"
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($localConfig.syncPath)) {
+                $settings.Path = $localConfig.syncPath
+                $settings.Source = ".governance.local.json"
+            }
+        }
+        catch {
+            Write-Host "⚠️ Invalid .governance.local.json format. Skipping report sync (non-blocking)." -ForegroundColor DarkGray
+            $settings.Enabled = $false
+        }
+    }
+
+    return $settings
+}
+
 function Resolve-RepoPath {
     param([string]$Path)
 
@@ -467,23 +521,35 @@ if (Test-Path $deltaFolder) {
     Remove-Item $deltaFolder -Recurse -Force
 }
 # --- COPY TO GOOGLE DRIVE ---
-# IMPORTANT: Update this path to your exact Google Drive location
-$DrivePath = "/Users/vcorjuenkar/Desktop/GDC POC1111"
+$syncSettings = Get-GovernanceSyncSettings -ConfigPath $governanceConfigPath
 
-if (Test-Path $DrivePath) {
-    Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
-    $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
-    
-    Get-ChildItem "./scanResults/*.csv" | ForEach-Object {
-        $newName = "{0}_{1}.csv" -f $_.BaseName, $timestamp
-        
-        $destinationPath = Join-Path -Path $DrivePath -ChildPath $newName
-        
-        Copy-Item -Path $_.FullName -Destination $destinationPath -Force
-        Write-Host "   ✅ Synced: $newName" -ForegroundColor Green
+if (-not $syncSettings.Enabled) {
+    Write-Host "ℹ️ Report sync is disabled." -ForegroundColor DarkGray
+}
+elseif ([string]::IsNullOrWhiteSpace($syncSettings.Path)) {
+    Write-Host "ℹ️ Report sync skipped: sync path not configured (.governance.local.json or SCAN_SYNC_PATH)." -ForegroundColor DarkGray
+}
+elseif (-not (Test-Path $syncSettings.Path)) {
+    Write-Host "⚠️ Report sync skipped: configured path not found." -ForegroundColor DarkGray
+}
+else {
+    try {
+        Write-Host "📂 Syncing scan reports..." -ForegroundColor Cyan
+        $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
+        $syncedCount = 0
+
+        Get-ChildItem "./scanResults/*.csv" -ErrorAction SilentlyContinue | ForEach-Object {
+            $newName = "{0}_{1}.csv" -f $_.BaseName, $timestamp
+            $destinationPath = Join-Path -Path $syncSettings.Path -ChildPath $newName
+            Copy-Item -Path $_.FullName -Destination $destinationPath -Force
+            $syncedCount++
+        }
+
+        Write-Host "   ✅ Report sync complete: $syncedCount file(s)." -ForegroundColor Green
     }
-} else {
-     Write-Host "⚠️  Drive Path not found. Skipping Upload." -ForegroundColor DarkGray
+    catch {
+        Write-Host "⚠️ Report sync failed (non-blocking). Commit decision is unchanged." -ForegroundColor DarkGray
+    }
 }
 
 # --- EXIT WITH ERROR IF VIOLATIONS WERE FOUND ---
