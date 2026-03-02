@@ -183,8 +183,9 @@ Ensure-Plugin "@salesforce/sfdx-scanner"
 Ensure-Plugin "lightning-flow-scanner"
 
 # ------------------------------
-# 7. EXTRACT scripts.zip
+# 7. EXTRACT scripts.zip (disabled)
 # ------------------------------
+<#
 Write-Host "[7/7] Extracting scripts.zip..." -ForegroundColor Cyan
 
 $zipPath = Join-Path $RepoRoot "scripts.zip"
@@ -214,6 +215,7 @@ else {
 
     Write-Host "  ✅ Scripts Extracted" -ForegroundColor Green
 }
+#>
 
 # ------------------------------
 # FINAL SUMMARY
