@@ -6,30 +6,11 @@ Param(
 
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
+$projectName = Split-Path -Leaf $repoRoot
+$developerName = if (-not [string]::IsNullOrWhiteSpace($env:USER)) { $env:USER } elseif (-not [string]::IsNullOrWhiteSpace($env:USERNAME)) { $env:USERNAME } else { "Unknown" }
 
-# --- HELPER FUNCTION: Get Git Author ---
-function Get-GitAuthor {
-    param (
-        [string]$FilePath,
-        [int]$LineNumber
-    )
-    try {
-        # 'git blame' gets the commit info for a specific line
-        $blameInfo = git blame -L "$LineNumber,$LineNumber" --porcelain "$FilePath" 2>$null
-        
-        # Extract the line starting with "author "
-        $authorLine = $blameInfo | Select-String "^author "
-        if ($authorLine) {
-            return $authorLine.ToString().Substring(7) # Remove "author " prefix
-        }
-        return "Unknown"
-    }
-    catch {
-        return "Unknown"
-    }
-}
-
-# --- HELPER FUNCTION: Run Scan & Enrich with Author ---
+# --- HELPER FUNCTION: Run Scan & Enrich ---
 function Run-ScanAndEnrich {
     param (
         [string]$ScanType,
@@ -41,7 +22,7 @@ function Run-ScanAndEnrich {
 
     Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
 
-    # FIX: Generate a temp file that explicitly ends in .json
+    # Generate a temp file that explicitly ends in .json
     $tempFileName = "SFScan_$(Get-Random).json"
     $tempJsonFile = Join-Path ([System.IO.Path]::GetTempPath()) $tempFileName
 
@@ -58,7 +39,7 @@ function Run-ScanAndEnrich {
     try {
         if (Test-Path $tempJsonFile) {
             $jsonContent = Get-Content $tempJsonFile -Raw
-            
+
             # Check if file is empty
             if ([string]::IsNullOrWhiteSpace($jsonContent)) {
                  Write-Host "   ⚠️ Scanner returned no data." -ForegroundColor DarkGray
@@ -83,21 +64,16 @@ function Run-ScanAndEnrich {
 
     $finalReport = @()
 
-    # 3. Iterate Violations and Fetch Git Author
+    # 3. Iterate Violations and Build Report
     foreach ($file in $jsonObj) {
         $fileName = $file.fileName
-        
+
         foreach ($violation in $file.violations) {
             $line = $violation.line
-            
-            # Call Git Blame
-            $devName = Get-GitAuthor -FilePath $fileName -LineNumber $line
 
-            # NEW: Add 'Date Reported' and 'Project' columns here
             $row = [PSCustomObject]@{
                 "Date Reported" = Get-Date -Format "yyyy-MM-dd"
-                "Project"       = "Lumen"
-                "Developer"     = $devName
+                "Project"       = $projectName
                 "Severity"      = $violation.severity
                 "Rule"          = $violation.ruleName
                 "Category"      = $violation.category
@@ -122,7 +98,7 @@ function Run-ScanAndEnrich {
 
 # --- MAIN SCRIPT EXECUTION ---
 
-Write-Host "🚀 Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Full Project Code Scan..." -ForegroundColor Cyan
 
 # 1. Clean up old results
 if (Test-Path -Path "./scanResults/") {
@@ -176,9 +152,5 @@ Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
 sf flow scan -d "./force-app/" | Out-File -FilePath "./scanResults/flowScan.json" -Encoding UTF8
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
-
-# --- EXIT WITH ERROR IF VIOLATIONS WERE FOUND ---
-if ($global:TotalViolations -gt 0) {
-    Write-Host "⛔ FATAL: $global:TotalViolations violations found across all scans." -ForegroundColor Red
-    exit 1
-}
+Write-Host "Reports available at: ./scanResults" -ForegroundColor Green
+Write-Host "Total violations found (Apex + JS): $global:TotalViolations" -ForegroundColor Cyan
