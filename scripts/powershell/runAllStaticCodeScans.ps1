@@ -6,11 +6,30 @@ Param(
 
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$projectName = Split-Path -Leaf $repoRoot
-$developerName = if (-not [string]::IsNullOrWhiteSpace($env:USER)) { $env:USER } elseif (-not [string]::IsNullOrWhiteSpace($env:USERNAME)) { $env:USERNAME } else { "Unknown" }
 
-# --- HELPER FUNCTION: Run Scan & Enrich ---
+# --- HELPER FUNCTION: Get Git Author ---
+function Get-GitAuthor {
+    param (
+        [string]$FilePath,
+        [int]$LineNumber
+    )
+    try {
+        # 'git blame' gets the commit info for a specific line
+        $blameInfo = git blame -L "$LineNumber,$LineNumber" --porcelain "$FilePath" 2>$null
+        
+        # Extract the line starting with "author "
+        $authorLine = $blameInfo | Select-String "^author "
+        if ($authorLine) {
+            return $authorLine.ToString().Substring(7) # Remove "author " prefix
+        }
+        return "Unknown"
+    }
+    catch {
+        return "Unknown"
+    }
+}
+
+# --- HELPER FUNCTION: Run Scan & Enrich with Author ---
 function Run-ScanAndEnrich {
     param (
         [string]$ScanType,
@@ -22,7 +41,7 @@ function Run-ScanAndEnrich {
 
     Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
 
-    # Generate a temp file that explicitly ends in .json
+    # FIX: Generate a temp file that explicitly ends in .json
     $tempFileName = "SFScan_$(Get-Random).json"
     $tempJsonFile = Join-Path ([System.IO.Path]::GetTempPath()) $tempFileName
 
@@ -39,7 +58,7 @@ function Run-ScanAndEnrich {
     try {
         if (Test-Path $tempJsonFile) {
             $jsonContent = Get-Content $tempJsonFile -Raw
-
+            
             # Check if file is empty
             if ([string]::IsNullOrWhiteSpace($jsonContent)) {
                  Write-Host "   ⚠️ Scanner returned no data." -ForegroundColor DarkGray
@@ -64,16 +83,21 @@ function Run-ScanAndEnrich {
 
     $finalReport = @()
 
-    # 3. Iterate Violations and Build Report
+    # 3. Iterate Violations and Fetch Git Author
     foreach ($file in $jsonObj) {
         $fileName = $file.fileName
-
+        
         foreach ($violation in $file.violations) {
             $line = $violation.line
+            
+            # Call Git Blame
+            $devName = Get-GitAuthor -FilePath $fileName -LineNumber $line
 
+            # NEW: Add 'Date Reported' and 'Project' columns here
             $row = [PSCustomObject]@{
                 "Date Reported" = Get-Date -Format "yyyy-MM-dd"
-                "Project"       = $projectName
+                "Project"       = "Lumen"
+                "Developer"     = $devName
                 "Severity"      = $violation.severity
                 "Rule"          = $violation.ruleName
                 "Category"      = $violation.category
@@ -96,30 +120,9 @@ function Run-ScanAndEnrich {
     }
 }
 
-function Get-FlowErrorCount {
-    param([string]$FlowReportPath)
-
-    if (-not (Test-Path $FlowReportPath)) {
-        return 0
-    }
-
-    $reportText = Get-Content $FlowReportPath -Raw
-    if ([string]::IsNullOrWhiteSpace($reportText)) {
-        return 0
-    }
-
-    # Governance policy: Flow count should include only error-severity findings.
-    $errorMatch = [regex]::Match($reportText, "-\s*error:\s*(\d+)")
-    if ($errorMatch.Success) {
-        return [int]$errorMatch.Groups[1].Value
-    }
-
-    return 0
-}
-
 # --- MAIN SCRIPT EXECUTION ---
 
-Write-Host "🚀 Starting Full Project Code Scan..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
 
 # 1. Clean up old results
 if (Test-Path -Path "./scanResults/") {
@@ -170,15 +173,32 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
 
 # C. Run Flow Scan
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
-$flowReportPath = "./scanResults/flowScan.json"
-sf flow scan -d "./force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
-$flowErrorCount = Get-FlowErrorCount -FlowReportPath $flowReportPath
-if ($flowErrorCount -gt 0) {
-    Write-Host "   ❌ Found $flowErrorCount flow error violation(s)! Saved to: $flowReportPath" -ForegroundColor Red
-} else {
-    Write-Host "   ✅ No flow error violations found." -ForegroundColor Green
-}
+sf flow scan -d "./force-app/" | Out-File -FilePath "./scanResults/flowScan.json" -Encoding UTF8
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
-Write-Host "Reports available at: ./scanResults" -ForegroundColor Green
-Write-Host "Total violations found (Apex + JS + Flow errors): $($global:TotalViolations + $flowErrorCount)" -ForegroundColor Cyan
+
+# --- COPY TO GOOGLE DRIVE ---
+# IMPORTANT: Update this path to your exact Google Drive location
+$DrivePath = "/Users/ujjwal.rawat/Google Drive/GDC PMD violations Report"
+
+if (Test-Path $DrivePath) {
+    Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
+    $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
+    
+    Get-ChildItem "./scanResults/*.csv" | ForEach-Object {
+        $newName = "{0}_{1}.csv" -f $_.BaseName, $timestamp
+        
+        $destinationPath = Join-Path -Path $DrivePath -ChildPath $newName
+        
+        Copy-Item -Path $_.FullName -Destination $destinationPath -Force
+        Write-Host "   ✅ Synced: $newName" -ForegroundColor Green
+    }
+} else {
+     Write-Host "⚠️  Drive Path not found. Skipping Upload." -ForegroundColor DarkGray
+}
+
+# --- EXIT WITH ERROR IF VIOLATIONS WERE FOUND ---
+if ($global:TotalViolations -gt 0) {
+    Write-Host "⛔ FATAL: $global:TotalViolations violations found across all scans." -ForegroundColor Red
+    exit 1
+}
