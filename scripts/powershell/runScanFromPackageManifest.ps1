@@ -11,6 +11,53 @@ $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $deltaFolder = Join-Path $repoRoot "changed-sources"
 $scanResultsDir = Join-Path $repoRoot "scanResults"
 $global:TotalViolations = 0
+$governanceConfigPath = Join-Path $repoRoot ".governance.local.json"
+
+. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+
+function Get-GovernanceSyncSettings {
+    param([string]$ConfigPath)
+
+    $settings = [PSCustomObject]@{
+        Enabled = $true
+        Path    = $null
+        Source  = "default"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:SCAN_SYNC_ENABLED)) {
+        $parsedBool = $null
+        if ([bool]::TryParse($env:SCAN_SYNC_ENABLED, [ref]$parsedBool)) {
+            $settings.Enabled = $parsedBool
+            $settings.Source = "env:SCAN_SYNC_ENABLED"
+        }
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($env:SCAN_SYNC_PATH)) {
+        $settings.Path = $env:SCAN_SYNC_PATH
+        $settings.Source = "env:SCAN_SYNC_PATH"
+    }
+    elseif (Test-Path $ConfigPath) {
+        try {
+            $localConfig = Get-Content $ConfigPath -Raw | ConvertFrom-Json
+
+            if ($null -ne $localConfig.syncEnabled) {
+                $settings.Enabled = [bool]$localConfig.syncEnabled
+                $settings.Source = ".governance.local.json"
+            }
+
+            if (-not [string]::IsNullOrWhiteSpace($localConfig.syncPath)) {
+                $settings.Path = $localConfig.syncPath
+                $settings.Source = ".governance.local.json"
+            }
+        }
+        catch {
+            Write-Host "⚠️ Invalid .governance.local.json format. Skipping report sync (non-blocking)." -ForegroundColor DarkGray
+            $settings.Enabled = $false
+        }
+    }
+
+    return $settings
+}
 
 function Resolve-PackagePath {
     param([string]$InputPath)
@@ -298,13 +345,31 @@ try {
 
     Write-Host "Checking Flow Scan..." -ForegroundColor Yellow
     $flowReportPath = Join-Path $scanResultsDir "flowScan.json"
+    $flowCsvPath = Join-Path $scanResultsDir "Flow_codescan.csv"
     try {
         sf flow scan -d $scanRoot 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
     }
     catch {
         Write-Host "  WARNING: Flow scan failed." -ForegroundColor DarkGray
     }
-    $flowViolations = Get-FlowErrorCount -FlowReportPath $flowReportPath
+    $flowRows = @(Get-FlowScannerErrorRows -FlowReportPath $flowReportPath)
+    if ($flowRows.Count -gt 0) {
+        $flowRows | ForEach-Object {
+            [PSCustomObject]@{
+                "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+                "Project"       = (Split-Path -Leaf $repoRoot)
+                "Developer"     = $env:USER
+                "Severity"      = $_.Severity
+                "Rule"          = $_.Rule
+                "Category"      = $_.Category
+                "Line"          = $_.Line
+                "File"          = $_.File
+                "Message"       = $_.Message
+            }
+        } | Export-Csv -Path $flowCsvPath -NoTypeInformation
+        Write-Host "  Saved $($flowRows.Count) flow error finding(s). Report: $flowCsvPath" -ForegroundColor DarkGray
+    }
+    $flowViolations = Get-FlowScannerErrorCount -FlowReportPath $flowReportPath
     if ($flowViolations -gt 0) {
         Write-Host "  Found $flowViolations flow error violation(s). Report: $flowReportPath" -ForegroundColor Red
     } else {
@@ -334,6 +399,37 @@ try {
     Write-Host "Component violation summary:" -ForegroundColor Cyan
     $componentSummary | Format-Table -AutoSize
     Write-Host "Total violations reported (Apex + JS + Flow): $($apexViolations + $jsViolations + $flowViolations)" -ForegroundColor Cyan
+
+    $syncSettings = Get-GovernanceSyncSettings -ConfigPath $governanceConfigPath
+
+    if (-not $syncSettings.Enabled) {
+        Write-Host "ℹ️ Report sync is disabled." -ForegroundColor DarkGray
+    }
+    elseif ([string]::IsNullOrWhiteSpace($syncSettings.Path)) {
+        Write-Host "ℹ️ Report sync skipped: sync path not configured (.governance.local.json or SCAN_SYNC_PATH)." -ForegroundColor DarkGray
+    }
+    elseif (-not (Test-Path $syncSettings.Path)) {
+        Write-Host "⚠️ Report sync skipped: configured path not found." -ForegroundColor DarkGray
+    }
+    else {
+        try {
+            Write-Host "📂 Syncing scan reports..." -ForegroundColor Cyan
+            $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
+            $syncedCount = 0
+
+            Get-ChildItem (Join-Path $scanResultsDir "*.csv") -ErrorAction SilentlyContinue | ForEach-Object {
+                $newName = "{0}_{1}.csv" -f $_.BaseName, $timestamp
+                $destinationPath = Join-Path -Path $syncSettings.Path -ChildPath $newName
+                Copy-Item -Path $_.FullName -Destination $destinationPath -Force
+                $syncedCount++
+            }
+
+            Write-Host "   ✅ Report sync complete: $syncedCount file(s)." -ForegroundColor Green
+        }
+        catch {
+            Write-Host "⚠️ Report sync failed (non-blocking). Scan result is unchanged." -ForegroundColor DarkGray
+        }
+    }
     exit 0
 }
 catch {

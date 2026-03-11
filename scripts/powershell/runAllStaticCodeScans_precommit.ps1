@@ -4,6 +4,8 @@ Param(
     [string]$scanMode = "F"
 )
 
+. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
 $deltaFolder = "changed-sources"
@@ -233,37 +235,28 @@ function Get-FlowViolationCounts {
     $counts = [PSCustomObject]@{
         TotalViolations       = 0
         ChangedLineViolations = 0
+        ChangedRows           = @()
     }
 
-    if (-not (Test-Path $FlowReportPath)) {
-        return $counts
-    }
+    $flowRows = @(Get-FlowScannerRows -FlowReportPath $FlowReportPath)
+    $counts.TotalViolations = $flowRows.Count
 
-    $lines = Get-Content $FlowReportPath
-    if (-not $lines -or $lines.Count -eq 0) {
-        return $counts
-    }
-
-    $currentFlowRepoPath = $null
-
-    foreach ($line in $lines) {
-        if ($line -match "^=== Flow: .+\(([^)]+\.flow-meta\.xml)\) \(\d+ results\)") {
-            $flowFileName = $Matches[1]
-            $currentFlowRepoPath = Resolve-FlowRepoPath -FlowFileName $flowFileName -ChangedLinesByFile $ChangedLinesByFile
-            continue
-        }
-
-        if ($line -match "^\s*Rule\s+Severity\s+Type\s+Name\s+Line\s+Column\s+Message") { continue }
-        if ($line -match "^-{5,}") { continue }
-
-        if ($line -match "^\s*(\S+)\s+\S+\s+\S+\s+.+?\s+(\d+)\s+(\d+)\s+.+$") {
-            $counts.TotalViolations++
-
-            $lineNumber = [int]$Matches[2]
-            if ($currentFlowRepoPath -and $ChangedLinesByFile.ContainsKey($currentFlowRepoPath)) {
-                $changedLines = $ChangedLinesByFile[$currentFlowRepoPath]
-                if ($changedLines.Contains($lineNumber)) {
-                    $counts.ChangedLineViolations++
+    foreach ($row in $flowRows) {
+        $currentFlowRepoPath = Resolve-FlowRepoPath -FlowFileName $row.File -ChangedLinesByFile $ChangedLinesByFile
+        if ($currentFlowRepoPath -and $ChangedLinesByFile.ContainsKey($currentFlowRepoPath)) {
+            $changedLines = $ChangedLinesByFile[$currentFlowRepoPath]
+            if ($changedLines.Contains([int]$row.Line)) {
+                $counts.ChangedLineViolations++
+                $counts.ChangedRows += [PSCustomObject]@{
+                    "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+                    "Project"       = $projectName
+                    "Developer"     = Get-GitAuthor -FilePath $currentFlowRepoPath -LineNumber ([int]$row.Line)
+                    "Severity"      = $row.Severity
+                    "Rule"          = $row.Rule
+                    "Category"      = $row.Category
+                    "Line"          = [int]$row.Line
+                    "File"          = $currentFlowRepoPath
+                    "Message"       = $row.Message
                 }
             }
         }
@@ -274,17 +267,7 @@ function Get-FlowViolationCounts {
 
 function Get-FlowSummaryLine {
     param([string]$FlowReportPath)
-
-    if (-not (Test-Path $FlowReportPath)) {
-        return "Total: 0 Results in 0 Flows."
-    }
-
-    $summaryMatch = Select-String -Path $FlowReportPath -Pattern "^=== Total:\s*(.+)$" | Select-Object -First 1
-    if ($summaryMatch) {
-        return $summaryMatch.Matches[0].Groups[1].Value.Trim()
-    }
-
-    return "Total: 0 Results in 0 Flows."
+    return Get-FlowScannerSummaryLine -FlowReportPath $FlowReportPath
 }
 
 # --- HELPER FUNCTION: Create Delta Folder ---
@@ -498,12 +481,24 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
 
 Write-Host "• Checking Flow Scan..." -ForegroundColor Yellow
 $flowReportPath = "./scanResults/flowScan.json"
+$flowCsvPath = "./scanResults/Flow_codescan.csv"
 sf flow scan -d "./changed-sources/force-app/" 2>$null | Out-File -FilePath $flowReportPath -Encoding UTF8
 $flowSummary = Get-FlowSummaryLine -FlowReportPath $flowReportPath
 Write-Host "   $flowSummary" -ForegroundColor DarkGray
 $flowCounts = Get-FlowViolationCounts -FlowReportPath $flowReportPath -ChangedLinesByFile $changedLinesByFile
 $flowChangedViolations = $flowCounts.ChangedLineViolations
 $flowTotalViolations = $flowCounts.TotalViolations
+$flowChangedRows = @()
+foreach ($flowRow in $flowCounts.ChangedRows) {
+    if ($flowRow.Severity -ieq "error") {
+        $flowChangedRows += $flowRow
+    }
+}
+
+if ($flowChangedRows.Count -gt 0) {
+    $flowChangedRows | Export-Csv -Path $flowCsvPath -NoTypeInformation
+    Write-Host ("   Saved " + $flowChangedRows.Count + " flow error finding(s) to: " + $flowCsvPath) -ForegroundColor DarkGray
+}
 
 if ($flowChangedViolations -gt 0) {
     Write-Host "   ❌ Flow Scan failed: $flowChangedViolations violation(s) on staged changed lines." -ForegroundColor Red

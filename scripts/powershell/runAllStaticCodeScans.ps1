@@ -4,6 +4,8 @@ Param(
     [string]$scanMode = "F"
 )
 
+. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
 
@@ -173,7 +175,25 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
 
 # C. Run Flow Scan
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
-sf flow scan -d "./force-app/" | Out-File -FilePath "./scanResults/flowScan.json" -Encoding UTF8
+$flowReportPath = "./scanResults/flowScan.json"
+$flowCsvPath = "./scanResults/Flow_codescan.csv"
+sf flow scan -d "./force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
+$flowRows = @(Get-FlowScannerErrorRows -FlowReportPath $flowReportPath)
+if ($flowRows.Count -gt 0) {
+    $flowRows | ForEach-Object {
+        [PSCustomObject]@{
+            "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+            "Project"       = $projectName
+            "Severity"      = $_.Severity
+            "Rule"          = $_.Rule
+            "Category"      = $_.Category
+            "Line"          = $_.Line
+            "File"          = $_.File
+            "Message"       = $_.Message
+        }
+    } | Export-Csv -Path $flowCsvPath -NoTypeInformation
+    Write-Host "   ℹ️ Saved $($flowRows.Count) flow error finding(s) to: $flowCsvPath" -ForegroundColor DarkGray
+}
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
 
