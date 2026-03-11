@@ -29,7 +29,7 @@ public with sharing class AxisNanoFetchAccountDetails {
         respon = AxisNanoFetchAccountDetailsWrap.parse(
           resp.checklistRecord.axisltd_Response__c
         );
-        system.debug('@@@ 222');
+        system.debug('@@@ 22222');
 
         wrap.accList = respon.Data.AccountDetails;
       } else {
