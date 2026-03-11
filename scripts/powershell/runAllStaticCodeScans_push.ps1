@@ -246,6 +246,7 @@ function Get-FlowViolationCounts {
 
     $counts = [PSCustomObject]@{
         TotalViolations       = 0
+        TotalErrorViolations  = 0
         ChangedLineViolations = 0
         ChangedRows           = @()
     }
@@ -254,10 +255,14 @@ function Get-FlowViolationCounts {
     $counts.TotalViolations = $flowRows.Count
 
     foreach ($row in $flowRows) {
+        if ($row.Severity -ieq "error") {
+            $counts.TotalErrorViolations++
+        }
+
         $currentFlowRepoPath = Resolve-FlowRepoPath -FlowFileName $row.File -ChangedLinesByFile $ChangedLinesByFile
         if ($currentFlowRepoPath -and $ChangedLinesByFile.ContainsKey($currentFlowRepoPath)) {
             $changedLines = $ChangedLinesByFile[$currentFlowRepoPath]
-            if ($changedLines.Contains([int]$row.Line)) {
+            if ($changedLines.Contains([int]$row.Line) -and $row.Severity -ieq "error") {
                 $counts.ChangedLineViolations++
                 $counts.ChangedRows += [PSCustomObject]@{
                     "Date Reported" = Get-Date -Format "yyyy-MM-dd"
@@ -484,17 +489,13 @@ Write-Host "   $flowSummary" -ForegroundColor DarkGray
 $flowCounts = Get-FlowViolationCounts -FlowReportPath $flowReportPath -ChangedLinesByFile $changedLinesByFile
 $flowChangedViolations = $flowCounts.ChangedLineViolations
 $flowTotalViolations = $flowCounts.TotalViolations
-$flowChangedRows = @()
-foreach ($flowRow in $flowCounts.ChangedRows) {
-    if ($flowRow.Severity -ieq "error") {
-        $flowChangedRows += $flowRow
-    }
-}
+$flowTotalErrorViolations = $flowCounts.TotalErrorViolations
+$flowChangedRows = @($flowCounts.ChangedRows)
 if ($flowChangedRows.Count -gt 0) {
     $flowChangedRows | Export-Csv -Path $flowCsvPath -NoTypeInformation
     Write-Host ("   Saved " + $flowChangedRows.Count + " flow error finding(s) to: " + $flowCsvPath) -ForegroundColor DarkGray
 }
-Write-Host "   Flow violations on changed lines: $flowChangedViolations (out of $flowTotalViolations total)." -ForegroundColor DarkGray
+Write-Host "   Flow error violations on changed lines: $flowChangedViolations (out of $flowTotalErrorViolations total errors, $flowTotalViolations total findings)." -ForegroundColor DarkGray
 
 if ($flowChangedViolations -gt 0) {
     Write-Host "   ❌ Flow Scan failed: $flowChangedViolations violation(s) on changed lines." -ForegroundColor Red
@@ -504,8 +505,8 @@ else {
     Write-Host "   ✅ Flow Scan passed: no violations on changed lines." -ForegroundColor Green
 }
 
-if ($flowTotalViolations -gt $flowChangedViolations) {
-    Write-Host "   ℹ️ Ignored $($flowTotalViolations - $flowChangedViolations) flow violations outside changed lines." -ForegroundColor DarkGray
+if ($flowTotalErrorViolations -gt $flowChangedViolations) {
+    Write-Host "   ℹ️ Ignored $($flowTotalErrorViolations - $flowChangedViolations) flow error violation(s) outside changed lines." -ForegroundColor DarkGray
 }
 
 if (Test-Path $deltaFolder) {
