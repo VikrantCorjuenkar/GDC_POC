@@ -6,14 +6,24 @@ param(
     [string]$scanMode = "C"
 )
 
-$ErrorActionPreference = "Stop"
+# Prevent stderr from external tools from terminating the script
+$ErrorActionPreference = "Continue"
+
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $deltaFolder = Join-Path $repoRoot "changed-sources"
 $scanResultsDir = Join-Path $repoRoot "scanResults"
 $global:TotalViolations = 0
 $governanceConfigPath = Join-Path $repoRoot ".governance.local.json"
 
-. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+try {
+    . (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+} catch {
+    Write-Host "[ERROR] Failed to load _flowScanCsv.ps1: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
+}
+
+# Ensure Java in PATH for PMD scans
+. (Join-Path $PSScriptRoot "_ensureJava.ps1")
 
 function Get-GovernanceSyncSettings {
     param([string]$ConfigPath)

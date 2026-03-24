@@ -34,13 +34,14 @@ function Get-FlowScannerRows {
         }
 
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
-        if ($line -match "^[┌├└].*[┐┤┘]$") { continue }
+        if ($line -match "^[\u250C\u251C\u2514].*[\u2510\u2524\u2518]$") { continue }
         if ($line -match "^\s*Rule\s+Severity\s+Type\s+Name\s+Line\s+Column\s+Message") { continue }
         if ($line -match "^-{5,}") { continue }
 
-        if ($line.TrimStart().StartsWith("│")) {
+        $boxVert = [char]0x2502
+        if ($line.TrimStart().StartsWith($boxVert)) {
             $columns = @(
-                $line.Trim() -split "│" |
+                $line.Trim() -split [char]0x2502 |
                 Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
                 ForEach-Object { $_.Trim() }
             )

@@ -2,7 +2,8 @@
 
 param(
     [ValidateSet("C", "F")]
-    [string]$scanMode = "C"
+    [string]$scanMode = "C",
+    [switch]$VerboseErrors
 )
 
 $repoRoot = $PSScriptRoot
@@ -15,6 +16,9 @@ if (-not (Test-Path $scannerScript)) {
 
 Write-Host "STARTING FULL PROJECT SCAN WRAPPER..." -ForegroundColor Cyan
 Write-Host "Scan Mode: $scanMode" -ForegroundColor DarkGray
+if ($VerboseErrors) { Write-Host "VerboseErrors: ON" -ForegroundColor DarkGray }
 
-& pwsh -File $scannerScript -scanMode $scanMode
+$args = @("-scanMode", $scanMode)
+if ($VerboseErrors) { $args += "-VerboseErrors" }
+& pwsh -File $scannerScript @args
 exit $LASTEXITCODE

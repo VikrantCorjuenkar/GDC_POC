@@ -1,18 +1,57 @@
-# runAllStaticCodeScans.ps1
+# runAllStaticCodeScans_fullProject.ps1
 
 Param(
-    [string]$scanMode = "F"
+    [string]$scanMode = "F",
+    [switch]$VerboseErrors
 )
 
-. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+# Prevent stderr from external tools (sf scanner, sf flow) from terminating the script
+$ErrorActionPreference = "Continue"
 
-# Global counter to track total violations across all scans
+# --- ERROR HELPER ---
+function Write-ScriptError {
+    param([string]$Context, [object]$Exception)
+    Write-Host "[ERROR] $Context" -ForegroundColor Red
+    Write-Host "  Message: $($Exception.Exception.Message)" -ForegroundColor Red
+    if ($VerboseErrors -and $Exception.ScriptStackTrace) {
+        Write-Host "  ScriptStackTrace: $($Exception.ScriptStackTrace)" -ForegroundColor DarkGray
+    }
+    if ($Exception.Exception.InnerException) {
+        Write-Host "  Inner: $($Exception.Exception.InnerException.Message)" -ForegroundColor Red
+    }
+}
+
+# --- LOAD HELPERS ---
+Write-Host "Scan Mode: $scanMode" -ForegroundColor Yellow
+try {
+    . (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+} catch {
+    Write-ScriptError -Context "Failed to load _flowScanCsv.ps1" -Exception $_
+    exit 1
+}
+
+# Ensure Java is in PATH for PMD scans
+. (Join-Path $PSScriptRoot "_ensureJava.ps1")
+
+# --- SETUP ---
 $global:TotalViolations = 0
-$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$projectName = Split-Path -Leaf $repoRoot
-$developerName = if (-not [string]::IsNullOrWhiteSpace($env:USER)) { $env:USER } elseif (-not [string]::IsNullOrWhiteSpace($env:USERNAME)) { $env:USERNAME } else { "Unknown" }
-$governanceConfigPath = Join-Path $repoRoot ".governance.local.json"
+try {
+    $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
+} catch {
+    Write-ScriptError -Context "Failed to resolve repo root path" -Exception $_
+    exit 1
+}
 
+$projectName = Split-Path -Leaf $repoRoot
+$developerName = "Unknown"
+if (-not [string]::IsNullOrWhiteSpace($env:USER)) { $developerName = $env:USER }
+elseif (-not [string]::IsNullOrWhiteSpace($env:USERNAME)) { $developerName = $env:USERNAME }
+
+Write-Host "Developer: $developerName" -ForegroundColor DarkGray
+$governanceConfigPath = Join-Path $repoRoot ".governance.local.json"
+Write-Host "Governance config: $governanceConfigPath" -ForegroundColor DarkGray
+
+# --- SYNC SETTINGS ---
 function Get-GovernanceSyncSettings {
     param([string]$ConfigPath)
 
@@ -49,7 +88,8 @@ function Get-GovernanceSyncSettings {
             }
         }
         catch {
-            Write-Host "⚠️ Invalid .governance.local.json format. Skipping report sync (non-blocking)." -ForegroundColor DarkGray
+            Write-Host "[!] Invalid .governance.local.json format. Skipping report sync." -ForegroundColor DarkGray
+            Write-Host "    Error: $($_.Exception.Message)" -ForegroundColor DarkGray
             $settings.Enabled = $false
         }
     }
@@ -57,7 +97,7 @@ function Get-GovernanceSyncSettings {
     return $settings
 }
 
-# --- HELPER FUNCTION: Run Scan & Enrich ---
+# --- SCAN & ENRICH ---
 function Run-ScanAndEnrich {
     param (
         [string]$ScanType,
@@ -67,125 +107,118 @@ function Run-ScanAndEnrich {
         [string]$OutCsvPath
     )
 
-    Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
+    Write-Host "[>>] Executing $ScanType Scan..." -ForegroundColor Yellow
 
-    # Generate a temp file that explicitly ends in .json
     $tempFileName = "SFScan_$(Get-Random).json"
     $tempJsonFile = Join-Path ([System.IO.Path]::GetTempPath()) $tempFileName
 
-    # 1. Run Scanner (Output to Temp JSON File)
+    # Run scanner, capture stderr so it doesn't terminate the script
+    $sfOutput = $null
     if ($ConfigFile) {
         if ($Engine -eq "pmd") {
-            sf scanner run --target $Target --engine $Engine --pmdconfig $ConfigFile --format json --outfile $tempJsonFile
+            $sfOutput = sf scanner run --target $Target --engine $Engine --pmdconfig $ConfigFile --format json --outfile $tempJsonFile 2>&1
         } else {
-            sf scanner run --target $Target --engine $Engine --eslintconfig $ConfigFile --format json --outfile $tempJsonFile
+            $sfOutput = sf scanner run --target $Target --engine $Engine --eslintconfig $ConfigFile --format json --outfile $tempJsonFile 2>&1
         }
     }
 
-    # 2. Read and Parse JSON from the file
     try {
         if (Test-Path $tempJsonFile) {
-            $jsonContent = Get-Content $tempJsonFile -Raw
+            $jsonContent = Get-Content $tempJsonFile -Raw -ErrorAction Stop
 
-            # Check if file is empty
             if ([string]::IsNullOrWhiteSpace($jsonContent)) {
-                 Write-Host "   ⚠️ Scanner returned no data." -ForegroundColor DarkGray
-                 return
+                Write-Host "   [!] Scanner returned no data." -ForegroundColor DarkGray
+                if ($sfOutput) { $sfOutput | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray } }
+                return
             }
 
             $jsonObj = $jsonContent | ConvertFrom-Json
-        }
-        else {
-             Write-Host "   ⚠️ Output file creation failed." -ForegroundColor Red
-             return
+        } else {
+            Write-Host "   [ERROR] Output file not created. Temp: $tempJsonFile" -ForegroundColor Red
+            if ($sfOutput) {
+                Write-Host "   Scanner output:" -ForegroundColor DarkGray
+                $sfOutput | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+            }
+            return
         }
     }
     catch {
-        Write-Host "   ⚠️ JSON Parsing Failed." -ForegroundColor Red
+        Write-Host "   [ERROR] JSON Parsing Failed: $($_.Exception.Message)" -ForegroundColor Red
+        if ($sfOutput) {
+            ($sfOutput | Select-Object -First 10) | ForEach-Object { Write-Host "     $_" -ForegroundColor DarkGray }
+        }
         return
     }
     finally {
-        # Cleanup: Delete the temp file
         if (Test-Path $tempJsonFile) { Remove-Item $tempJsonFile -ErrorAction SilentlyContinue }
     }
 
     $finalReport = @()
-
-    # 3. Iterate Violations and Build Report
-    foreach ($file in $jsonObj) {
-        $fileName = $file.fileName
-
-        foreach ($violation in $file.violations) {
-            $line = $violation.line
-
-            $row = [PSCustomObject]@{
-                "Date Reported" = Get-Date -Format "yyyy-MM-dd"
-                "Project"       = $projectName
-                "Severity"      = $violation.severity
-                "Rule"          = $violation.ruleName
-                "Category"      = $violation.category
-                "Line"          = $line
-                "File"          = $fileName
-                "Message"       = $violation.message
+    try {
+        foreach ($file in $jsonObj) {
+            $fileName = $file.fileName
+            foreach ($violation in $file.violations) {
+                $row = [PSCustomObject]@{
+                    "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+                    "Project"       = $projectName
+                    "Severity"      = $violation.severity
+                    "Rule"          = $violation.ruleName
+                    "Category"      = $violation.category
+                    "Line"          = $violation.line
+                    "File"          = $fileName
+                    "Message"       = $violation.message
+                }
+                $finalReport += $row
             }
-            $finalReport += $row
         }
+    } catch {
+        Write-Host "   [ERROR] Failed to process scan results: $($_.Exception.Message)" -ForegroundColor Red
+        return
     }
 
-    # 4. Export and Count
     $count = $finalReport.Count
     if ($count -gt 0) {
         $finalReport | Export-Csv -Path $OutCsvPath -NoTypeInformation
-        Write-Host "   ❌ Found $count violations! Saved to: $OutCsvPath" -ForegroundColor Red
+        Write-Host "   [X] Found $count violations! Saved to: $OutCsvPath" -ForegroundColor Red
         $global:TotalViolations += $count
     } else {
-        Write-Host "   ✅ Clean code! No violations found." -ForegroundColor Green
+        Write-Host "   [OK] Clean code! No violations found." -ForegroundColor Green
     }
 }
 
-function Get-FlowErrorCount {
-    param([string]$FlowReportPath)
+# --- MAIN ---
 
-    if (-not (Test-Path $FlowReportPath)) {
-        return 0
-    }
-
-    $reportText = Get-Content $FlowReportPath -Raw
-    if ([string]::IsNullOrWhiteSpace($reportText)) {
-        return 0
-    }
-
-    # Governance policy: Flow count should include only error-severity findings.
-    $errorMatch = [regex]::Match($reportText, "-\s*error:\s*(\d+)")
-    if ($errorMatch.Success) {
-        return [int]$errorMatch.Groups[1].Value
-    }
-
-    return 0
+$script:ErrorsOccurred = @()
+trap {
+    Write-Host "[FATAL] Unhandled error: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "ScriptStackTrace: $($_.ScriptStackTrace)" -ForegroundColor DarkGray
+    exit 1
 }
 
-# --- MAIN SCRIPT EXECUTION ---
+Write-Host "[>>] Starting Full Project Code Scan..." -ForegroundColor Cyan
 
-Write-Host "🚀 Starting Full Project Code Scan..." -ForegroundColor Cyan
-
-# 1. Clean up old results
-if (Test-Path -Path "./scanResults/") {
-    Remove-Item "./scanResults/" -Recurse -Force
+# 1. Clean scanResults
+try {
+    if (Test-Path -Path "./scanResults/") {
+        Remove-Item "./scanResults/" -Recurse -Force -ErrorAction Stop
+    }
+    New-Item -ItemType Directory -Force -Path "./scanResults" -ErrorAction Stop | Out-Null
+} catch {
+    Write-Host "[ERROR] Failed to prepare scanResults folder: $($_.Exception.Message)" -ForegroundColor Red
+    exit 1
 }
-New-Item -ItemType Directory -Force -Path "./scanResults" | Out-Null
 
-# 2. Determine Ruleset
+# 2. Determine ruleset
 if ($scanMode -eq 'F') {
     $pmdRuleSet = "./scripts/pmd/rulesets/full_scan.xml"
     Write-Host "   Mode: FULL SCAN" -ForegroundColor Yellow
-}
-else {
+} else {
     $pmdRuleSet = "./scripts/pmd/rulesets/critical_scan.xml"
     Write-Host "   Mode: CRITICAL SCAN" -ForegroundColor Yellow
     New-Item -ItemType Directory -Force -Path "./scripts/pmd/results" | Out-Null
 }
 
-# 3. Add Custom Rules (if present)
+# 3. Add custom rules if present
 if (Test-Path "./scripts/pmd/category/xml/xml_custom_rules.xml") {
     sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" 2>$null
 }
@@ -199,68 +232,80 @@ if (Test-Path $configPath) {
     (Get-Content $configPath).Replace('!**/*-meta.xml', '**/*-meta.xml') | Set-Content $configPath
 }
 
-# --- EXECUTE SCANS ---
+# --- SCANS ---
 
-# A. Run Apex PMD
-Run-ScanAndEnrich -ScanType "Apex PMD" `
-    -Target "./force-app/" `
-    -Engine "pmd" `
-    -ConfigFile $pmdRuleSet `
-    -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
+# A. Apex PMD
+try {
+    Run-ScanAndEnrich -ScanType "Apex PMD" `
+        -Target "./force-app/" `
+        -Engine "pmd" `
+        -ConfigFile $pmdRuleSet `
+        -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
+} catch { Write-Host "[ERROR] Apex PMD scan failed: $($_.Exception.Message)" -ForegroundColor Red }
 
-# B. Run JS ESLint
-Run-ScanAndEnrich -ScanType "JS ESLint" `
-    -Target "./force-app/**/*.js" `
-    -Engine "eslint-lwc" `
-    -ConfigFile "./scripts/eslint/.eslintrc.json" `
-    -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
+# B. JS ESLint
+try {
+    Run-ScanAndEnrich -ScanType "JS ESLint" `
+        -Target "./force-app/**/*.js" `
+        -Engine "eslint-lwc" `
+        -ConfigFile "./scripts/eslint/.eslintrc.json" `
+        -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
+} catch { Write-Host "[ERROR] JS ESLint scan failed: $($_.Exception.Message)" -ForegroundColor Red }
 
-# C. Run Flow Scan
-Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
+# C. Flow Scan
+Write-Host "[>>] Executing Flow Scan..." -ForegroundColor Yellow
 $flowReportPath = "./scanResults/flowScan.json"
 $flowCsvPath = "./scanResults/Flow_codescan.csv"
-sf flow scan -d "./force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
-$flowRows = @(Get-FlowScannerErrorRows -FlowReportPath $flowReportPath)
-$flowErrorCount = Get-FlowScannerErrorCount -FlowReportPath $flowReportPath
-if ($flowRows.Count -gt 0) {
-    $flowRows | ForEach-Object {
-        [PSCustomObject]@{
-            "Date Reported" = Get-Date -Format "yyyy-MM-dd"
-            "Project"       = $projectName
-            "Severity"      = $_.Severity
-            "Rule"          = $_.Rule
-            "Category"      = $_.Category
-            "Line"          = $_.Line
-            "File"          = $_.File
-            "Message"       = $_.Message
-        }
-    } | Export-Csv -Path $flowCsvPath -NoTypeInformation
-    Write-Host "   ℹ️ Saved $($flowRows.Count) flow error finding(s) to: $flowCsvPath" -ForegroundColor DarkGray
-}
-if ($flowErrorCount -gt 0) {
-    Write-Host "   ❌ Found $flowErrorCount flow error violation(s)! Saved to: $flowReportPath" -ForegroundColor Red
-} else {
-    Write-Host "   ✅ No flow error violations found." -ForegroundColor Green
+$flowErrorCount = 0
+try {
+    sf flow scan -d "./force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
+    if ($LASTEXITCODE -ne 0 -and $null -ne $LASTEXITCODE) {
+        Write-Host "   [WARN] Flow scan exited with code $LASTEXITCODE" -ForegroundColor Yellow
+    }
+    $flowRows = @(Get-FlowScannerErrorRows -FlowReportPath $flowReportPath)
+    $flowErrorCount = Get-FlowScannerErrorCount -FlowReportPath $flowReportPath
+    if ($flowRows.Count -gt 0) {
+        $flowRows | ForEach-Object {
+            [PSCustomObject]@{
+                "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+                "Project"       = $projectName
+                "Severity"      = $_.Severity
+                "Rule"          = $_.Rule
+                "Category"      = $_.Category
+                "Line"          = $_.Line
+                "File"          = $_.File
+                "Message"       = $_.Message
+            }
+        } | Export-Csv -Path $flowCsvPath -NoTypeInformation
+        Write-Host "   [i] Saved $($flowRows.Count) flow error finding(s) to: $flowCsvPath" -ForegroundColor DarkGray
+    }
+    if ($flowErrorCount -gt 0) {
+        Write-Host "   [X] Found $flowErrorCount flow error violation(s)!" -ForegroundColor Red
+    } else {
+        Write-Host "   [OK] No flow error violations found." -ForegroundColor Green
+    }
+} catch {
+    Write-Host "   [ERROR] Flow scan failed: $($_.Exception.Message)" -ForegroundColor Red
+    if ($VerboseErrors -and $_.ScriptStackTrace) { Write-Host "   $($_.ScriptStackTrace)" -ForegroundColor DarkGray }
 }
 
-Write-Host "✅ Scans Complete." -ForegroundColor Green
+# --- SUMMARY ---
+Write-Host "[OK] Scans Complete." -ForegroundColor Green
 Write-Host "Reports available at: ./scanResults" -ForegroundColor Green
-Write-Host "Total violations found (Apex + JS + Flow errors): $($global:TotalViolations + $flowErrorCount)" -ForegroundColor Cyan
+Write-Host "Total violations (Apex + JS + Flow errors): $($global:TotalViolations + $flowErrorCount)" -ForegroundColor Cyan
 
+# --- SYNC ---
 $syncSettings = Get-GovernanceSyncSettings -ConfigPath $governanceConfigPath
 
 if (-not $syncSettings.Enabled) {
-    Write-Host "ℹ️ Report sync is disabled." -ForegroundColor DarkGray
-}
-elseif ([string]::IsNullOrWhiteSpace($syncSettings.Path)) {
-    Write-Host "ℹ️ Report sync skipped: sync path not configured (.governance.local.json or SCAN_SYNC_PATH)." -ForegroundColor DarkGray
-}
-elseif (-not (Test-Path $syncSettings.Path)) {
-    Write-Host "⚠️ Report sync skipped: configured path not found." -ForegroundColor DarkGray
-}
-else {
+    Write-Host "[i] Report sync is disabled." -ForegroundColor DarkGray
+} elseif ([string]::IsNullOrWhiteSpace($syncSettings.Path)) {
+    Write-Host "[i] Report sync skipped: sync path not configured." -ForegroundColor DarkGray
+} elseif (-not (Test-Path $syncSettings.Path)) {
+    Write-Host "[!] Report sync skipped: configured path not found." -ForegroundColor DarkGray
+} else {
     try {
-        Write-Host "📂 Syncing scan reports..." -ForegroundColor Cyan
+        Write-Host "[>>] Syncing scan reports..." -ForegroundColor Cyan
         $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
         $syncedCount = 0
 
@@ -271,9 +316,16 @@ else {
             $syncedCount++
         }
 
-        Write-Host "   ✅ Report sync complete: $syncedCount file(s)." -ForegroundColor Green
+        Write-Host "   [OK] Report sync complete: $syncedCount file(s)." -ForegroundColor Green
     }
     catch {
-        Write-Host "⚠️ Report sync failed (non-blocking). Scan result is unchanged." -ForegroundColor DarkGray
+        Write-Host "[ERROR] Report sync failed: $($_.Exception.Message)" -ForegroundColor DarkGray
+        if ($VerboseErrors) { Write-Host "  $($_.ScriptStackTrace)" -ForegroundColor DarkGray }
     }
+}
+
+# Debug error summary (only shown with -VerboseErrors)
+if ($Error.Count -gt 0 -and $VerboseErrors) {
+    Write-Host "`n[DEBUG] Errors recorded during execution ($($Error.Count) total):" -ForegroundColor DarkGray
+    $Error | Select-Object -First 5 | ForEach-Object { Write-Host "  - $($_.Exception.Message)" -ForegroundColor DarkGray }
 }

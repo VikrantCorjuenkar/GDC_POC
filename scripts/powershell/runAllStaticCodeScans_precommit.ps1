@@ -1,19 +1,42 @@
 # runAllStaticCodeScans.ps1
 
 Param(
-    [string]$scanMode = "F"
+    [string]$scanMode = "F",
+    [switch]$VerboseErrors
 )
 
-. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+# Prevent stderr from external tools from terminating the script
+$ErrorActionPreference = "Continue"
+
+function Write-ScriptError {
+    param([string]$Context, [object]$Exception)
+    Write-Host "[ERROR] $Context" -ForegroundColor Red
+    Write-Host "  Message: $($Exception.Exception.Message)" -ForegroundColor Red
+    if ($VerboseErrors -and $Exception.ScriptStackTrace) {
+        Write-Host "  ScriptStackTrace: $($Exception.ScriptStackTrace)" -ForegroundColor DarkGray
+    }
+    if ($Exception.Exception.InnerException) {
+        Write-Host "  Inner: $($Exception.Exception.InnerException.Message)" -ForegroundColor Red
+    }
+}
+
+try {
+    . (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+} catch {
+    Write-ScriptError -Context "Failed to load _flowScanCsv.ps1" -Exception $_
+    exit 1
+}
+
+# Ensure Java in PATH for PMD scans
+. (Join-Path $PSScriptRoot "_ensureJava.ps1")
 
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
 $deltaFolder = "changed-sources"
 $global:CurrentDeveloper = $null
-$projectName = if (-not [string]::IsNullOrWhiteSpace($env:PROJECT_NAME)) {
-    $env:PROJECT_NAME
-} else {
-    Split-Path -Leaf (Get-Location).Path
+$projectName = Split-Path -Leaf (Get-Location).Path
+if (-not [string]::IsNullOrWhiteSpace($env:PROJECT_NAME)) {
+    $projectName = $env:PROJECT_NAME
 }
 
 # Force non-interactive/plain CLI output in git-hook context
@@ -465,24 +488,30 @@ Create-DeltaFolder -Files $changedFiles
 
 # --- RUN SCANS ON DELTA FOLDER ---
 
-Run-ScanAndEnrich -ScanType "Apex PMD" `
-    -Target "./changed-sources/force-app/" `
-    -Engine "pmd" `
-    -ConfigFile $pmdRuleSet `
-    -OutCsvPath "./scanResults/Apex_PMD_codescan.csv" `
-    -ChangedLinesByFile $changedLinesByFile
+try {
+    Run-ScanAndEnrich -ScanType "Apex PMD" `
+        -Target "./changed-sources/force-app/" `
+        -Engine "pmd" `
+        -ConfigFile $pmdRuleSet `
+        -OutCsvPath "./scanResults/Apex_PMD_codescan.csv" `
+        -ChangedLinesByFile $changedLinesByFile
+} catch { Write-Host "[ERROR] Apex PMD scan failed: $($_.Exception.Message)" -ForegroundColor Red }
 
-Run-ScanAndEnrich -ScanType "JS ESLint" `
-    -Target "./changed-sources/force-app/**/*.js" `
-    -Engine "eslint-lwc" `
-    -ConfigFile "./scripts/eslint/.eslintrc.json" `
-    -OutCsvPath "./scanResults/JS_ESLint_codescan.csv" `
-    -ChangedLinesByFile $changedLinesByFile
+try {
+    Run-ScanAndEnrich -ScanType "JS ESLint" `
+        -Target "./changed-sources/force-app/**/*.js" `
+        -Engine "eslint-lwc" `
+        -ConfigFile "./scripts/eslint/.eslintrc.json" `
+        -OutCsvPath "./scanResults/JS_ESLint_codescan.csv" `
+        -ChangedLinesByFile $changedLinesByFile
+} catch { Write-Host "[ERROR] JS ESLint scan failed: $($_.Exception.Message)" -ForegroundColor Red }
 
 Write-Host "• Checking Flow Scan..." -ForegroundColor Yellow
 $flowReportPath = "./scanResults/flowScan.json"
 $flowCsvPath = "./scanResults/Flow_codescan.csv"
-sf flow scan -d "./changed-sources/force-app/" 2>$null | Out-File -FilePath $flowReportPath -Encoding UTF8
+try {
+    sf flow scan -d "./changed-sources/force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
+} catch { Write-Host "[ERROR] Flow scan failed: $($_.Exception.Message)" -ForegroundColor Red }
 $flowSummary = Get-FlowSummaryLine -FlowReportPath $flowReportPath
 Write-Host "   $flowSummary" -ForegroundColor DarkGray
 $flowCounts = Get-FlowViolationCounts -FlowReportPath $flowReportPath -ChangedLinesByFile $changedLinesByFile
