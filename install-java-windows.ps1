@@ -12,6 +12,47 @@ $RepoRoot = $PSScriptRoot
 if ([string]::IsNullOrEmpty($RepoRoot)) {
     $RepoRoot = (Get-Location).Path
 }
+$programFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+
+function Find-InstalledJavaHome {
+    $candidates = @(
+        "$env:ProgramFiles\Microsoft\jdk-17*",
+        "$env:ProgramFiles\Eclipse Adoptium\jdk-17*",
+        "$env:ProgramFiles\Java\jdk-17*",
+        "$programFilesX86\Microsoft\jdk-17*"
+    )
+
+    foreach ($p in $candidates) {
+        $dir = Get-Item $p -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($dir -and (Test-Path (Join-Path $dir.FullName "bin\java.exe"))) {
+            return $dir.FullName
+        }
+    }
+
+    return $null
+}
+
+function Install-JavaWithFallback {
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        Write-Host "  Trying winget install..." -ForegroundColor Yellow
+        winget install --id Microsoft.OpenJDK.17 -e --accept-source-agreements --accept-package-agreements
+        if ($LASTEXITCODE -eq 0) {
+            return $true
+        }
+        Write-Host "  winget attempt failed with exit code $LASTEXITCODE." -ForegroundColor DarkGray
+    }
+
+    if (Get-Command choco -ErrorAction SilentlyContinue) {
+        Write-Host "  Trying Chocolatey install..." -ForegroundColor Yellow
+        choco install openjdk17 -y
+        if ($LASTEXITCODE -eq 0) {
+            return $true
+        }
+        Write-Host "  Chocolatey failed with exit code $LASTEXITCODE." -ForegroundColor DarkGray
+    }
+
+    return $false
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -40,51 +81,30 @@ if ($javaVer -and ($javaVer -match "version")) {
         }
     }
 } else {
-    Write-Host "  Java not found. Installing..." -ForegroundColor Yellow
-    if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget install Microsoft.OpenJDK.17 -e --accept-source-agreements --accept-package-agreements
-    } elseif (Get-Command choco -ErrorAction SilentlyContinue) {
-        choco install openjdk17 -y
+    # Java might be installed but not available in PATH for this shell.
+    $javaHome = Find-InstalledJavaHome
+    if ($javaHome) {
+        Write-Host "  Java found on disk (not yet on PATH): $javaHome" -ForegroundColor Green
     } else {
-        Write-Host "  Install winget or Chocolatey, or download Java from https://adoptium.net" -ForegroundColor Red
-        exit 1
-    }
-    Write-Host "  Java installed." -ForegroundColor Green
-
-    # Resolve JAVA_HOME from common install locations
-    $javaHome = $null
-    $candidates = @(
-        "$env:ProgramFiles\Microsoft\jdk-17*",
-        "$env:ProgramFiles\Eclipse Adoptium\jdk-17*",
-        "$env:ProgramFiles\Java\jdk-17*",
-        "${env:ProgramFiles(x86)}\Microsoft\jdk-17*"
-    )
-    foreach ($p in $candidates) {
-        $dir = Get-Item $p -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($dir -and (Test-Path (Join-Path $dir.FullName "bin\java.exe"))) {
-            $javaHome = $dir.FullName
-            break
+        Write-Host "  Java not found. Installing..." -ForegroundColor Yellow
+        if (-not (Install-JavaWithFallback)) {
+            Write-Host "  Could not install Java automatically." -ForegroundColor Red
+            Write-Host "  Please install Java 17 manually from https://adoptium.net" -ForegroundColor Red
+            exit 1
         }
-    }
-    if (-not $javaHome) {
-        Write-Host "  Could not locate Java install. Set JAVA_HOME manually." -ForegroundColor Yellow
-        exit 1
+        Write-Host "  Java installed." -ForegroundColor Green
+
+        # Resolve JAVA_HOME from common install locations
+        $javaHome = Find-InstalledJavaHome
+        if (-not $javaHome) {
+            Write-Host "  Could not locate Java install. Set JAVA_HOME manually." -ForegroundColor Yellow
+            exit 1
+        }
     }
 }
 
 if (-not $javaHome) {
-    $candidates = @(
-        "$env:ProgramFiles\Microsoft\jdk-17*",
-        "$env:ProgramFiles\Eclipse Adoptium\jdk-17*",
-        "$env:ProgramFiles\Java\jdk-17*"
-    )
-    foreach ($p in $candidates) {
-        $dir = Get-Item $p -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($dir -and (Test-Path (Join-Path $dir.FullName "bin\java.exe"))) {
-            $javaHome = $dir.FullName
-            break
-        }
-    }
+    $javaHome = Find-InstalledJavaHome
 }
 if (-not $javaHome) {
     Write-Host "  Could not resolve JAVA_HOME. Set it manually." -ForegroundColor Yellow
@@ -118,7 +138,7 @@ Write-Host "========================================" -ForegroundColor Cyan
 
 $nodePaths = @(
     "$env:ProgramFiles\nodejs",
-    "${env:ProgramFiles(x86)}\nodejs"
+    "$programFilesX86\nodejs"
 )
 foreach ($p in $nodePaths) {
     if ((Test-Path $p) -and ($env:PATH -notlike "*$p*")) {
