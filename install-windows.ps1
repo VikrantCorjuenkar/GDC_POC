@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Installs: Git, PowerShell Core, Node.js, Salesforce CLI, sfdx-scanner, lightning-flow-scanner.
-    For PMD/Apex scans, run install-java-windows.ps1 separately.
+    Then run install-java-windows.ps1 for Java and project npm dependencies.
 #>
 
 param([switch]$RunSubmitPR)
@@ -81,26 +81,6 @@ if (Test-CommandExists "node") {
         exit 1
     }
     Write-Host "  Node.js installed. Restart terminal to use." -ForegroundColor Green
-}
-
-# 3.5 NPM DEPENDENCIES
-$npmInstallSucceeded = $false
-Write-Host ""
-Write-Host "[3.5/7] Installing project npm dependencies..." -ForegroundColor Cyan
-$packageJsonPath = Join-Path $RepoRoot "package.json"
-if (Test-Path $packageJsonPath) {
-    Write-Host "  Running npm install..." -ForegroundColor Yellow
-    Push-Location $RepoRoot
-    npm install
-    if ($LASTEXITCODE -eq 0) {
-        $npmInstallSucceeded = $true
-        Write-Host "  npm dependencies installed." -ForegroundColor Green
-    } else {
-        Write-Host "  npm install failed. Fix package.json and run npm install." -ForegroundColor Yellow
-    }
-    Pop-Location
-} else {
-    Write-Host "  No package.json found. Skipping." -ForegroundColor DarkGray
 }
 
 # 4. SALESFORCE CLI
@@ -208,9 +188,6 @@ Write-Host "========================================" -ForegroundColor Green
 Write-Host "  Installation Complete!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host ""
-if (-not $npmInstallSucceeded -and (Test-Path $packageJsonPath)) {
-    Write-Host "  npm install did not complete. Fix package.json then run npm install." -ForegroundColor Yellow
-    Write-Host ""
-}
-Write-Host "  For PMD/Apex scans, run: powershell -ExecutionPolicy Bypass -File .\install-java-windows.ps1" -ForegroundColor DarkGray
+Write-Host "  Next: run powershell -ExecutionPolicy Bypass -File .\install-java-windows.ps1" -ForegroundColor DarkGray
+Write-Host "  (Installs Java + runs project npm install after PATH setup.)" -ForegroundColor DarkGray
 Write-Host ""

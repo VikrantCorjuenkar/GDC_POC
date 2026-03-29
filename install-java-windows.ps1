@@ -1,13 +1,17 @@
 <#
 .SYNOPSIS
-    Windows-only: Installs Java 17 and sets JAVA_HOME + PATH for PMD/Apex scans.
+    Windows-only: Installs Java 17, sets JAVA_HOME/PATH, then runs npm install.
 
 .DESCRIPTION
-    Run this after install.ps1 if you need Java for Code Analyzer (PMD) scans.
+    Run this after install-windows.ps1 to complete Java and npm setup.
     Uses winget or choco. Persists JAVA_HOME and Path to user environment.
 #>
 
 $ErrorActionPreference = "Stop"
+$RepoRoot = $PSScriptRoot
+if ([string]::IsNullOrEmpty($RepoRoot)) {
+    $RepoRoot = (Get-Location).Path
+}
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
@@ -104,6 +108,44 @@ if ($userPath -notlike "*$javaBinPath*") {
     Write-Host "  JAVA_HOME and Path updated. Restart terminal to apply." -ForegroundColor Gray
 } else {
     Write-Host "  JAVA_HOME and Path already set." -ForegroundColor Gray
+}
+
+# Install npm dependencies after PATH/JAVA setup.
+Write-Host ""
+Write-Host "========================================" -ForegroundColor Cyan
+Write-Host "  Project npm install" -ForegroundColor Cyan
+Write-Host "========================================" -ForegroundColor Cyan
+
+$nodePaths = @(
+    "$env:ProgramFiles\nodejs",
+    "${env:ProgramFiles(x86)}\nodejs"
+)
+foreach ($p in $nodePaths) {
+    if ((Test-Path $p) -and ($env:PATH -notlike "*$p*")) {
+        $env:PATH = "$p;$env:PATH"
+    }
+}
+
+$packageJsonPath = Join-Path $RepoRoot "package.json"
+if (-not (Test-Path $packageJsonPath)) {
+    Write-Host "  No package.json found at $RepoRoot. Skipping npm install." -ForegroundColor DarkGray
+} elseif (-not (Get-Command npm -ErrorAction SilentlyContinue)) {
+    Write-Host "  npm is still not available in this shell." -ForegroundColor Yellow
+    Write-Host "  Restart terminal, then run: npm install" -ForegroundColor Yellow
+} else {
+    Write-Host "  Running npm install in $RepoRoot..." -ForegroundColor Yellow
+    Push-Location $RepoRoot
+    try {
+        npm install
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "  npm dependencies installed." -ForegroundColor Green
+        } else {
+            Write-Host "  npm install failed. Fix package.json and rerun npm install." -ForegroundColor Yellow
+        }
+    }
+    finally {
+        Pop-Location
+    }
 }
 
 Write-Host ""

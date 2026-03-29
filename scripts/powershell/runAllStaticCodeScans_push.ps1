@@ -226,7 +226,10 @@ function Get-UnpushedChangedLines {
             if (-not $currentFile) { continue }
 
             $start = [int]$Matches[1]
-            $count = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+            $count = 1
+            if ($Matches[2]) {
+                $count = [int]$Matches[2]
+            }
             if ($count -le 0) { continue }
 
             for ($i = 0; $i -lt $count; $i++) {

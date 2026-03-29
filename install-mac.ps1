@@ -169,7 +169,7 @@ if ($javaVer -and ($javaVer -match 'version\s+"?\d')) {
 if (-not [string]::IsNullOrWhiteSpace($javaHomeToPersist)) {
     $env:JAVA_HOME = $javaHomeToPersist
     $javaBinPath = Join-Path $javaHomeToPersist "bin"
-    $env:PATH = "$javaBinPath:$env:PATH"
+    $env:PATH = "${javaBinPath}:$env:PATH"
     $shellRc = if (Test-Path "$env:HOME/.zshrc") { "$env:HOME/.zshrc" } else { "$env:HOME/.bashrc" }
     $javaHomeUnix = $javaHomeToPersist -replace "\\", "/"
     $javaLines = "`nexport JAVA_HOME=`"$javaHomeUnix`"`nexport PATH=`"`$JAVA_HOME/bin:`$PATH`""
@@ -216,13 +216,18 @@ Add-Plugin "lightning-flow-scanner"
 Write-Host ""
 Write-Host "[8/8] Installation summary" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
-$summary = @(
-    [PSCustomObject]@{ Component = "Git"; Status = (if (Test-CommandExists "git") { "Available" } else { "Missing" }) }
-    [PSCustomObject]@{ Component = "PowerShell (pwsh)"; Status = (if (Test-CommandExists "pwsh") { "Available" } else { "Missing" }) }
-    [PSCustomObject]@{ Component = "Node.js"; Status = (if (Test-CommandExists "node") { "Available" } else { "Missing" }) }
-    [PSCustomObject]@{ Component = "Salesforce CLI"; Status = (if (Test-CommandExists "sf") { "Available" } else { "Missing" }) }
-    [PSCustomObject]@{ Component = "Java"; Status = (if (Test-CommandExists "java") { "Available" } else { "Missing" }) }
-)
+$gitSt = "Missing"; if (Test-CommandExists "git") { $gitSt = "Available" }
+$pwshSt = "Missing"; if (Test-CommandExists "pwsh") { $pwshSt = "Available" }
+$nodeSt = "Missing"; if (Test-CommandExists "node") { $nodeSt = "Available" }
+$sfSt = "Missing"; if (Test-CommandExists "sf") { $sfSt = "Available" }
+$javaSt = "Missing"; if (Test-CommandExists "java") { $javaSt = "Available" }
+
+$summary = @()
+$s = New-Object PSObject; $s | Add-Member -NotePropertyName Component -NotePropertyValue "Git"; $s | Add-Member -NotePropertyName Status -NotePropertyValue $gitSt; $summary += $s
+$s = New-Object PSObject; $s | Add-Member -NotePropertyName Component -NotePropertyValue "PowerShell (pwsh)"; $s | Add-Member -NotePropertyName Status -NotePropertyValue $pwshSt; $summary += $s
+$s = New-Object PSObject; $s | Add-Member -NotePropertyName Component -NotePropertyValue "Node.js"; $s | Add-Member -NotePropertyName Status -NotePropertyValue $nodeSt; $summary += $s
+$s = New-Object PSObject; $s | Add-Member -NotePropertyName Component -NotePropertyValue "Salesforce CLI"; $s | Add-Member -NotePropertyName Status -NotePropertyValue $sfSt; $summary += $s
+$s = New-Object PSObject; $s | Add-Member -NotePropertyName Component -NotePropertyValue "Java"; $s | Add-Member -NotePropertyName Status -NotePropertyValue $javaSt; $summary += $s
 $summary | Format-Table -AutoSize
 Write-Host "Plugin Actions:" -ForegroundColor Yellow
 $pluginResults | Format-Table -AutoSize

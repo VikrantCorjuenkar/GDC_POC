@@ -14,9 +14,9 @@ param([switch]$RunSubmitPR)
 $repoRoot = $PSScriptRoot
 if ([string]::IsNullOrEmpty($repoRoot)) { $repoRoot = (Get-Location).Path }
 
-$isWindows = $env:OS -eq "Windows_NT"
+$isWin = $env:OS -eq "Windows_NT"
 
-if ($isWindows) {
+if ($isWin) {
     $scriptPath = Join-Path $repoRoot "install-windows.ps1"
 } else {
     $scriptPath = Join-Path $repoRoot "install-mac.ps1"
@@ -28,7 +28,7 @@ if (-not (Test-Path $scriptPath)) {
 }
 
 $osName = "Mac/Linux"
-if ($isWindows) { $osName = "Windows" }
+if ($isWin) { $osName = "Windows" }
 Write-Host "Running installer for $osName..." -ForegroundColor Cyan
 Write-Host ""
 

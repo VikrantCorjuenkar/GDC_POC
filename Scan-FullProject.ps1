@@ -18,7 +18,21 @@ Write-Host "STARTING FULL PROJECT SCAN WRAPPER..." -ForegroundColor Cyan
 Write-Host "Scan Mode: $scanMode" -ForegroundColor DarkGray
 if ($VerboseErrors) { Write-Host "VerboseErrors: ON" -ForegroundColor DarkGray }
 
-$args = @("-scanMode", $scanMode)
-if ($VerboseErrors) { $args += "-VerboseErrors" }
-& pwsh -File $scannerScript @args
-exit $LASTEXITCODE
+$scanArgs = @("-scanMode", $scanMode)
+if ($VerboseErrors) { $scanArgs += "-VerboseErrors" }
+
+$pwshCmd = Get-Command pwsh -ErrorAction SilentlyContinue
+if ($pwshCmd) {
+    & pwsh -NoProfile -File $scannerScript @scanArgs
+    exit $LASTEXITCODE
+}
+
+Write-Host "pwsh not found; using current PowerShell host." -ForegroundColor Yellow
+Push-Location $repoRoot
+try {
+    & $scannerScript @scanArgs
+    exit $LASTEXITCODE
+}
+finally {
+    Pop-Location
+}

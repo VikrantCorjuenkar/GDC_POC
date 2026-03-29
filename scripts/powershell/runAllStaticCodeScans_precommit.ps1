@@ -212,7 +212,10 @@ function Get-StagedChangedLines {
             if (-not $currentFile) { continue }
 
             $start = [int]$Matches[1]
-            $count = if ($Matches[2]) { [int]$Matches[2] } else { 1 }
+            $count = 1
+            if ($Matches[2]) {
+                $count = [int]$Matches[2]
+            }
 
             # count can be 0 for deletion-only hunks; these do not map to a new-file line
             if ($count -le 0) { continue }

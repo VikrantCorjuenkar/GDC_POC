@@ -18,5 +18,18 @@ Write-Host "STARTING PACKAGE-BASED SCAN..." -ForegroundColor Cyan
 Write-Host "Package XML Path: $PackageXmlPath" -ForegroundColor DarkGray
 Write-Host "Scan Mode: $scanMode" -ForegroundColor DarkGray
 
-& pwsh -File $scannerScript -PackageXmlPath $PackageXmlPath -scanMode $scanMode
-exit $LASTEXITCODE
+$pwshCmd = Get-Command pwsh -ErrorAction SilentlyContinue
+if ($pwshCmd) {
+    & pwsh -NoProfile -File $scannerScript -PackageXmlPath $PackageXmlPath -scanMode $scanMode
+    exit $LASTEXITCODE
+}
+
+Write-Host "pwsh not found; using current PowerShell host." -ForegroundColor Yellow
+Push-Location $repoRoot
+try {
+    & $scannerScript -PackageXmlPath $PackageXmlPath -scanMode $scanMode
+    exit $LASTEXITCODE
+}
+finally {
+    Pop-Location
+}
