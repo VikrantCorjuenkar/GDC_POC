@@ -27,6 +27,31 @@ function Test-CommandExists {
     $null -ne (Get-Command $Command -ErrorAction SilentlyContinue)
 }
 
+function Refresh-WindowsToolPath {
+    $candidatePaths = @(
+        "$env:ProgramFiles\nodejs",
+        "$env:LOCALAPPDATA\sf\bin",
+        "$env:APPDATA\npm"
+    )
+
+    foreach ($p in $candidatePaths) {
+        if ((Test-Path $p) -and ($env:PATH -notlike "*$p*")) {
+            $env:PATH = "$p;$env:PATH"
+        }
+    }
+}
+
+function Test-SfPluginInstalled {
+    param([string]$PluginName)
+
+    $prevEAP = $ErrorActionPreference
+    $ErrorActionPreference = "SilentlyContinue"
+    $listOutput = sf plugins 2>&1
+    $ErrorActionPreference = $prevEAP
+    if ($LASTEXITCODE -ne 0) { return $false }
+    return $null -ne ($listOutput | Select-String $PluginName)
+}
+
 # 1. GIT
 Write-Host "[1/7] Checking Git..." -ForegroundColor Cyan
 if (Test-CommandExists "git") {
@@ -94,9 +119,19 @@ if (Test-CommandExists "sf") {
     Write-Host "  sf found: $sfVer" -ForegroundColor Green
 } else {
     Write-Host "  Salesforce CLI not found. Installing..." -ForegroundColor Yellow
+    Refresh-WindowsToolPath
+    if (-not (Test-CommandExists "npm")) {
+        Write-Host "  npm not found in current session PATH. Restart terminal and re-run installer." -ForegroundColor Red
+        exit 1
+    }
     npm install -g @salesforce/cli
     if ($LASTEXITCODE -ne 0) {
         Write-Host "  Failed to install sf. Try: npm install -g @salesforce/cli" -ForegroundColor Red
+        exit 1
+    }
+    Refresh-WindowsToolPath
+    if (-not (Test-CommandExists "sf")) {
+        Write-Host "  sf installed but not available in current PATH. Restart terminal and re-run installer." -ForegroundColor Red
         exit 1
     }
     Write-Host "  Salesforce CLI installed." -ForegroundColor Green
@@ -110,17 +145,30 @@ function Add-Plugin {
     param([string]$PluginName)
     $prevEAP = $ErrorActionPreference
     $ErrorActionPreference = "SilentlyContinue"
-    $exists = sf plugins 2>$null | Select-String $PluginName
+    $exists = Test-SfPluginInstalled -PluginName $PluginName
     Write-Host "  Ensuring $PluginName..." -ForegroundColor Yellow
     sf plugins install $PluginName --force 2>$null
+    $installExitCode = $LASTEXITCODE
     $ErrorActionPreference = $prevEAP
+
+    $installedNow = Test-SfPluginInstalled -PluginName $PluginName
     $pluginAction = "Installed"
     if ($exists) { $pluginAction = "Reinstalled (Updated)" }
+    $status = "Success"
+    if (($installExitCode -ne 0) -or (-not $installedNow)) {
+        $status = "Failed"
+        Write-Host "  Failed to ensure plugin: $PluginName" -ForegroundColor Red
+    }
+
     $obj = New-Object -TypeName PSObject
     $obj | Add-Member -NotePropertyName Plugin -NotePropertyValue $PluginName
     $obj | Add-Member -NotePropertyName Action -NotePropertyValue $pluginAction
-    $obj | Add-Member -NotePropertyName Status -NotePropertyValue "Success"
+    $obj | Add-Member -NotePropertyName Status -NotePropertyValue $status
     $script:pluginResults += $obj
+
+    if ($status -ne "Success") {
+        throw "Plugin installation failed for $PluginName"
+    }
 }
 
 $sfConfigDir = Join-Path $env:USERPROFILE ".config\sf"
