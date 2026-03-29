@@ -91,7 +91,14 @@ function New-ResetDirectory {
 function Copy-RepoFileToDelta {
     param([string]$AbsolutePath)
 
-    $relative = [System.IO.Path]::GetRelativePath($repoRoot, $AbsolutePath) -replace "\\", "/"
+    $rootFull = [System.IO.Path]::GetFullPath($repoRoot)
+    $fileFull = [System.IO.Path]::GetFullPath($AbsolutePath)
+
+    if (-not $fileFull.StartsWith($rootFull, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $false
+    }
+
+    $relative = $fileFull.Substring($rootFull.Length).TrimStart('\', '/') -replace "\\", "/"
     if (-not $relative.StartsWith("force-app/")) {
         return $false
     }
