@@ -1,0 +1,139 @@
+"Date Reported","Project","Severity","Rule","Category","Line","File","Message"
+"2026-03-29","GDC_Governance_2026","1","ApexSharingViolations","Security","1","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoGenrateDocketTwoController.cls","
+Apex classes should declare a sharing model if DML or SOQL/SOSL is used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","4","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoGenrateDocketTwoController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","63","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoGenrateDocketTwoController.cls","
+Variable 'contentDocumentLinkIds' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexSharingViolations","Security","11","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIDFYIntegration.cls","
+Apex classes should declare a sharing model if DML or SOQL/SOSL is used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","27","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIDFYIntegration.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","33","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIDFYIntegration.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","92","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIMDPaymentCallback.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","145","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIMDPaymentCallback.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","145","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIMDPaymentCallback.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","29","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoIncomeAssessmentGetApplicants.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","18","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","94","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","107","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","121","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","139","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","165","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","166","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","167","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","188","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","203","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","208","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","208","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","211","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","233","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Variable 'newWorkItemIds' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","258","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","331","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","331","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","338","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","346","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitialMoneyDeposiController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","133","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","141","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","165","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Variable 'contractDocumentId' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","301","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","308","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","308","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","318","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","403","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoInitiateEsignController.cls","
+Variable 'templist' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexSharingViolations","Security","12","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoKFSController.cls","
+Apex classes should declare a sharing model if DML or SOQL/SOSL is used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","101","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoKFSController.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","131","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoKFSController.cls","
+Variable 'contentDocumentLinkIds' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","173","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoKFSController.cls","
+Variable 'cdApproved' defined but not used
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","236","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoLoanAppSharingHelper.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","259","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoLoanAppSharingHelper.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","267","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoLoanAppSharingHelper.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","ApexCRUDViolation","Security","274","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/AxisNanoLoanAppSharingHelper.cls","
+Validate CRUD permission before SOQL/DML operation or enforce user mode
+"
+"2026-03-29","GDC_Governance_2026","1","UnusedLocalVariable","Best Practices","23","/Users/vcorjuenkar/Desktop/GDC_Governance_2026/force-app/main/default/classes/FetchAccountDetails.cls","
+Variable 'tempResponse2233' defined but not used
+"
