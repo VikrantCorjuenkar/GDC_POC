@@ -612,5 +612,28 @@ export default class ApplicationDocumentSummaryNano extends LightningElement {
     hasValue(val){
         return (val != '' && val != null && val != undefined) ;
     }
+
+    // Temporary method to validate line-level ESLint blocking in pre-commit hook.
+    eslintScannerLineLevelTest() {
+        setTimeout(() => console.log('eslint test line'), 0);
+        this.template.querySelector('div').innerHTML = 'eslint test';
+        this.template.querySelector('span').innerHTML = 'eslint test second change';
+    }
+
+    precommitLineLevelCleanTest() {
+        const label = 'precommit-clean-change';
+        return label;
+    }
+
+    // Intentional violations for scanner validation.
+    intentionalLwcViolationProbe() {
+            const hardcodedApiKey = 'sk_test_51NANO_VALIDATION_1234567890';
+            const neverUsed = 'intentional-unused-variable';
+            const weakComparison = '1' == 2;
+            eval("console.log('unsafe eval execution')");
+            this.template.querySelector('p').innerHTML = hardcodedApiKey;
+            alert('Intentional scanner violation');
+            return weakComparison;
+    }
     /*Avinash code end */
 }

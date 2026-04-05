@@ -15,22 +15,31 @@ public with sharing class AxisNanoFetchAccountDetails {
       IntegrationUtility.ResponseWrapper resp = fetchAccountIntegration.invoke(
         recID
       );
+      
 
       ResponseWrap wrap = new ResponseWrap();
       AxisNanoFetchAccountDetailsWrap respon = new AxisNanoFetchAccountDetailsWrap();
       if (resp.statusCode == 200) {
-        Map<String, Object> tempResponse = (Map<String, Object>) JSON.deserializeUntyped(
+        Map<String, Object> tempResponse2233 = (Map<String, Object>) JSON.deserializeUntyped(
           resp.checklistRecord.axisltd_Response__c
         );
 
+        system.debug('hello');
 
         respon = AxisNanoFetchAccountDetailsWrap.parse(
           resp.checklistRecord.axisltd_Response__c
         );
+        system.debug('@@@ 22222');
+
+        for(Integer i = 0; i < 11; i++) {
+          system.debug('hello');
+          account acc = [SELECT Id, Name FROM Account WHERE Id = '0016F00000Uo6a1QAB'];
+        }
 
         wrap.accList = respon.Data.AccountDetails;
       } else {
         wrap.errorMsg = 'No account found, please validate account number.';
+        system.debug('@@@');
       }
       return wrap;
     } catch (Exception e) {

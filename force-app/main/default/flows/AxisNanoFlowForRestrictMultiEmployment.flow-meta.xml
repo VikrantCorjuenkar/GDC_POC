@@ -101,6 +101,16 @@
         <dataType>Boolean</dataType>
         <expression>ISNEW()</expression>
     </formulas>
+    <formulas>
+        <name>FlowScannerHardcodedIdTest</name>
+        <dataType>String</dataType>
+        <expression>"001000000000000AAA"</expression>
+    </formulas>
+    <formulas>
+        <name>FlowScannerHardcodedIdTestTwo</name>
+        <dataType>String</dataType>
+        <expression>"001000000000001AAA"</expression>
+    </formulas>
     <interviewLabel>AxisNanoFlowForRestrictMultiEmployment {!$Flow.CurrentDateTime}</interviewLabel>
     <label>AxisNanoFlowForRestrictMultiEmployment</label>
     <processMetadataValues>
@@ -184,4 +194,5 @@
         <isOutput>false</isOutput>
         <scale>0</scale>
     </variables>
+    
 </Flow>

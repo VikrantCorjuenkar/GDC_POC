@@ -4,6 +4,9 @@ Param(
     [string]$scanMode = "F"
 )
 
+# Ensure Java is in PATH/JAVA_HOME before PMD scan (handles users with Java installed but not in PATH)
+. (Join-Path $PSScriptRoot "_ensureJava.ps1")
+
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
 
@@ -39,7 +42,7 @@ function Run-ScanAndEnrich {
         [string]$OutCsvPath
     )
 
-    Write-Host "🔎 Executing $ScanType Scan..." -ForegroundColor Yellow
+    Write-Host "� Executing $ScanType Scan..." -ForegroundColor Yellow
 
     # FIX: Generate a temp file that explicitly ends in .json
     $tempFileName = "SFScan_$(Get-Random).json"
@@ -122,7 +125,7 @@ function Run-ScanAndEnrich {
 
 # --- MAIN SCRIPT EXECUTION ---
 
-Write-Host "🚀 Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
+Write-Host "� Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
 
 # 1. Clean up old results
 if (Test-Path -Path "./scanResults/") {
@@ -172,8 +175,81 @@ Run-ScanAndEnrich -ScanType "JS ESLint" `
     -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
 
 # C. Run Flow Scan
-Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
-sf flow scan -d "./force-app/" | Out-File -FilePath "./scanResults/flowScan.json" -Encoding UTF8
+Write-Host "� Executing Flow Scan..." -ForegroundColor Yellow
+
+$flowCsvPath = "./scanResults/flowscan.csv"
+$flowJsonTempPath = "./scanResults/flowscan_temp.json"
+
+# Run the scan.
+$flowRaw = sf flow scan -d "./force-app/" --json 2>$null | Out-String
+
+if ([string]::IsNullOrWhiteSpace($flowRaw)) {
+    Write-Host "   ⏭️ No Flow files found or scanner returned empty." -ForegroundColor DarkGray
+} else {
+    try {
+        # The CLI often spits out text before the JSON.
+        # This dynamically finds where the actual JSON payload begins.
+        $jsonStartIndex = $flowRaw.IndexOf("{")
+        $jsonArrayStartIndex = $flowRaw.IndexOf("[")
+        
+        $startIndex = -1
+        if ($jsonStartIndex -ge 0 -and $jsonArrayStartIndex -ge 0) {
+            $startIndex = [math]::Min($jsonStartIndex, $jsonArrayStartIndex)
+        } elseif ($jsonStartIndex -ge 0) {
+            $startIndex = $jsonStartIndex
+        } elseif ($jsonArrayStartIndex -ge 0) {
+            $startIndex = $jsonArrayStartIndex
+        }
+
+        if ($startIndex -ge 0) {
+            # Strip away the CLI warnings and parse pure JSON
+            $cleanJsonString = $flowRaw.Substring($startIndex)
+            $parsedJson = $cleanJsonString | ConvertFrom-Json
+            
+            # ---> FIX: Drill through the double nesting! <---
+            $flowViolations = @()
+            
+            # Step 1: Strip the outer Salesforce CLI '.result' envelope if it exists
+            $cliPayload = $parsedJson
+            if ($null -ne $parsedJson.result) {
+                $cliPayload = $parsedJson.result
+            }
+
+            # Step 2: Now look for the Flow Scanner's '.results' array
+            foreach ($node in @($cliPayload)) {
+                if ($null -ne $node.results) {
+                    # We hit the motherlode! Iterate through the 604 actual violations
+                    foreach ($issue in $node.results) {
+                        $flowViolations += $issue
+                    }
+                } else {
+                    # Fallback just in case the format changes
+                    $flowViolations += $node
+                }
+            }
+
+            if ($flowViolations.Count -gt 0) {
+                # Export data to a CSV file (This will now have correct headers per issue, not the summary!)
+                $flowViolations | Export-Csv -Path $flowCsvPath -NoTypeInformation
+                Write-Host "   ❌ Found $($flowViolations.Count) Flow violations! Saved to: $flowCsvPath" -ForegroundColor Red
+                
+                # Add these to the global total so it blocks Git pushes!
+                $global:TotalViolations += $flowViolations.Count
+            } else {
+                Write-Host "   ✅ Clean code! No Flow violations found." -ForegroundColor Green
+            }
+        } else {
+            # Fallback if the scanner completely failed to output JSON brackets
+            Write-Host "   ⚠️ Flow scanner did not return JSON format. Saving raw text output..." -ForegroundColor DarkGray
+            $flowRaw | Out-File -FilePath $flowJsonTempPath -Encoding UTF8
+        }
+    } catch {
+        # If it still fails, it will print exactly WHY it failed so we can debug it
+        Write-Host "   ⚠️ Could not convert Flow output to CSV. Error: $_" -ForegroundColor Red
+        Write-Host "   Saving raw output to $flowJsonTempPath..." -ForegroundColor DarkGray
+        $flowRaw | Out-File -FilePath $flowJsonTempPath -Encoding UTF8
+    }
+}
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
 
@@ -182,7 +258,7 @@ Write-Host "✅ Scans Complete." -ForegroundColor Green
 $DrivePath = "/Users/ujjwal.rawat/Google Drive/GDC PMD violations Report"
 
 if (Test-Path $DrivePath) {
-    Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
+    Write-Host "� Syncing to Google Drive..." -ForegroundColor Cyan
     $timestamp = Get-Date -Format "yyyy-MM-dd_HH-mm"
     
     Get-ChildItem "./scanResults/*.csv" | ForEach-Object {

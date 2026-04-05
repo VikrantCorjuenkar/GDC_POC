@@ -9,10 +9,10 @@ $RepoRoot = $PSScriptRoot
 
 # Try to find the script in common path variations (handling Case Sensitivity)
 $PossiblePaths = @(
-    "$RepoRoot/Scripts/Powershell/runAllStaticCodeScans.ps1",
-    "$RepoRoot/scripts/powershell/runAllStaticCodeScans.ps1",
-    "$RepoRoot/Scripts/PowerShell/runAllStaticCodeScans.ps1",
-    "$RepoRoot/scripts/Powershell/runAllStaticCodeScans.ps1"
+    "$RepoRoot/Scripts/Powershell/runAllStaticCodeScans_push.ps1",
+    "$RepoRoot/scripts/powershell/runAllStaticCodeScans_push.ps1",
+    "$RepoRoot/Scripts/PowerShell/runAllStaticCodeScans_push.ps1",
+    "$RepoRoot/scripts/Powershell/runAllStaticCodeScans_push.ps1"
 )
 
 $ScannerScript = $null
@@ -25,7 +25,7 @@ foreach ($path in $PossiblePaths) {
 
 # 2. VALIDATE SCRIPT EXISTENCE
 if (-not $ScannerScript) {
-    Write-Host "❌ ERROR: Could not find 'runAllStaticCodeScans.ps1'" -ForegroundColor Red
+    Write-Host "❌ ERROR: Could not find 'runAllStaticCodeScans_push.ps1'" -ForegroundColor Red
     Write-Host "   I looked in the following locations:" -ForegroundColor Gray
     $PossiblePaths | ForEach-Object { Write-Host "   - $_" }
     Write-Host "   Please verify your folder names match exactly (Case Sensitive on Mac!)." -ForegroundColor Yellow

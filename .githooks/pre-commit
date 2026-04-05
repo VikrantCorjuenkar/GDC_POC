@@ -1,0 +1,29 @@
+#!/bin/bash
+
+echo "🔎 Running Governance Pre-Commit Scan..."
+
+# Move to repo root (very important)
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 1
+
+# Run pre-commit scanner script (blocks commit on violations)
+SCANNER_SCRIPT="./scripts/powershell/runAllStaticCodeScans_precommit.ps1"
+
+if [ ! -f "$SCANNER_SCRIPT" ]; then
+  echo ""
+  echo "❌ Commit blocked: pre-commit scanner script not found at $SCANNER_SCRIPT"
+  exit 1
+fi
+
+pwsh "$SCANNER_SCRIPT" -scanMode "C"
+RESULT=$?
+
+if [ $RESULT -ne 0 ]; then
+  echo ""
+  echo "❌ Commit blocked due to violations."
+  exit 1
+fi
+
+echo ""
+echo "✅ Scan passed. Commit allowed."
+exit 0

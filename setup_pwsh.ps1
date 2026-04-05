@@ -31,7 +31,7 @@ $env:PATH = "/opt/homebrew/bin:/usr/local/bin:$env:PATH"
 
 # 3. Install PowerShell
 Write-Host "Installing PowerShell..."
-& brew install --cask powershell
+& brew install powershell/tap/powershell
 
 Write-Host "--- SETUP COMPLETE ---"
 Write-Host "Please restart your terminal or run 'source ~/.zshrc'"

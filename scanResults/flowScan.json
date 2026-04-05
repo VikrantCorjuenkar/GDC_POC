@@ -1,0 +1,152 @@
+ ›   Warning: @salesforce/cli update available from 2.121.7 to 2.127.2.
+Loading Lightning Flow Scanner...
+Identified 8 flows to scan... done
+[2m=== [22m[1mFlow: SMLoanApplicationRejectionNano (SMLoanApplicationRejectionNano.flow-meta.xml) (5 results)[22m
+
+Type: AutoLaunchedFlow
+
+┌───────────────────────────┬──────────┬───────────────┬────────────────────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────┐
+│ Rule                      │ Severity │ Type          │ Name                           │ Line │ Column │ Message                                                             │ Url                                                                             │
+├───────────────────────────┼──────────┼───────────────┼────────────────────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
+│ missing-flow-description  │ error    │ description   │ undefined                      │ 1    │ 1      │ Flow descriptions improve documentation and maintainability         │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-flow-description │
+│ invalid-naming-convention │ error    │ name          │ SMLoanApplicationRejectionNano │ 1    │ 1      │ Consistent naming improves Flow discoverability and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#flow-naming-convention   │
+│ missing-fault-path        │ warning  │ recordUpdates │ Update_Loan_Application        │ 28   │ 11     │ Fault Paths enable graceful error handling                          │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ recursive-record-update   │ warning  │ recordUpdates │ Update_Loan_Application        │ 28   │ 11     │ After-save updates to same record trigger recursion                 │ https://flow-scanner.github.io/lightning-flow-scanner/#recursive-after-update   │
+│ unspecified-trigger-order │ note     │ TriggerOrder  │ TriggerOrder                   │ 1    │ 1      │ Trigger Order ensures predictable execution sequence                │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-trigger-order    │
+└───────────────────────────┴──────────┴───────────────┴────────────────────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: Nano Loan Application Approval (Nano_Loan_Application_Approval.flow-meta.xml) (15 results)[22m
+
+Type: Flow
+
+┌───────────────────────┬──────────┬───────────────┬────────────────────────────────┬──────┬────────┬──────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────┐
+│ Rule                  │ Severity │ Type          │ Name                           │ Line │ Column │ Message                                              │ Url                                                                          │
+├───────────────────────┼──────────┼───────────────┼────────────────────────────────┼──────┼────────┼──────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
+│ get-record-all-fields │ warning  │ recordLookups │ Get_current_Record             │ 215  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ Get_IPA_CheckList_Record       │ 236  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ get_NANO_LA_Record_Type        │ 285  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ Get_Personal_Discussion_record │ 313  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ Get_Property_Records           │ 334  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ Get_Running_User_Record        │ 357  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ get-record-all-fields │ warning  │ recordLookups │ getDeviations                  │ 378  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_current_Record             │ 215  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_Running_User_Record        │ 357  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ get_NANO_LA_Record_Type        │ 285  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ getDeviations                  │ 378  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_Personal_Discussion_record │ 313  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_IPA_CheckList_Record       │ 236  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_Property_Records           │ 334  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ actionCalls   │ Validate_IPA_ELK_Integrations  │ 4    │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+└───────────────────────┴──────────┴───────────────┴────────────────────────────────┴──────┴────────┴──────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: Nano Change Loan Application Owner (Nano_Change_Loan_Application_Owner.flow-meta.xml) (20 results)[22m
+
+Type: Flow
+
+┌──────────────────────────┬──────────┬───────────────┬───────────────────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────┐
+│ Rule                     │ Severity │ Type          │ Name                          │ Line │ Column │ Message                                                     │ Url                                                                             │
+├──────────────────────────┼──────────┼───────────────┼───────────────────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
+│ missing-flow-description │ error    │ description   │ undefined                     │ 1442 │ 5      │ Flow descriptions improve documentation and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-flow-description │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_CPC_map_Records           │ 1109 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_CPC_Mapping_Record        │ 1137 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_Current_User              │ 1165 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_LA_owner_CPC_map_Records  │ 1186 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_Loan_Application_Record   │ 1214 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_Queue                     │ 1235 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ get-record-all-fields    │ warning  │ recordLookups │ Get_Re_assign_User_Record     │ 1263 │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ inactive-flow            │ warning  │ status        │ Inactive                      │ 1552 │ 3      │ Inactive Flows should be deleted or archived                │ https://flow-scanner.github.io/lightning-flow-scanner/#inactive-flow            │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_Loan_Application_Record   │ 1214 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_Current_User              │ 1165 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_Re_assign_User_Record     │ 1263 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_CPC_map_Records           │ 1109 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_Queue                     │ 1235 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_CPC_Mapping_Record        │ 1137 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordLookups │ Get_LA_owner_CPC_map_Records  │ 1186 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordUpdates │ Update_Loan_Application_Owner │ 1311 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ missing-fault-path       │ warning  │ recordUpdates │ Update_LA_for_CA_Users        │ 1284 │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+│ unsafe-running-context   │ error    │ runInMode     │ SystemModeWithoutSharing      │ 1334 │ 3      │ System mode without sharing creates security risks          │ https://flow-scanner.github.io/lightning-flow-scanner/#unsafe-running-context   │
+│ unused-variable          │ warning  │ formulas      │ CheckResonFieldNull           │ 1030 │ 11     │ Unused variables add clutter and hurt maintainability       │ https://flow-scanner.github.io/lightning-flow-scanner/#unused-variable          │
+└──────────────────────────┴──────────┴───────────────┴───────────────────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: Initiate eSign Process Nano (Initiate_eSign_Process_Nano.flow-meta.xml) (3 results)[22m
+
+Type: Flow
+
+┌───────────────────────┬──────────┬───────────────┬──────────────────────┬──────┬────────┬──────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────┐
+│ Rule                  │ Severity │ Type          │ Name                 │ Line │ Column │ Message                                              │ Url                                                                          │
+├───────────────────────┼──────────┼───────────────┼──────────────────────┼──────┼────────┼──────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────┤
+│ get-record-all-fields │ warning  │ recordLookups │ Get_current_Record   │ 121  │ 11     │ Retrieving all fields harms performance and security │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields │
+│ missing-fault-path    │ warning  │ recordLookups │ Get_current_Record   │ 121  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+│ missing-fault-path    │ warning  │ recordUpdates │ Update_Esign_Consent │ 142  │ 11     │ Fault Paths enable graceful error handling           │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path    │
+└───────────────────────┴──────────┴───────────────┴──────────────────────┴──────┴────────┴──────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: Axis Nano Generate eSign Application Form (Axis_Nano_Generate_eSign_Application_Form.flow-meta.xml) (4 results)[22m
+
+Type: Flow
+
+┌──────────────────────────┬──────────┬───────────────┬─────────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────┐
+│ Rule                     │ Severity │ Type          │ Name                │ Line │ Column │ Message                                                     │ Url                                                                             │
+├──────────────────────────┼──────────┼───────────────┼─────────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
+│ missing-flow-description │ error    │ description   │ undefined           │ 1    │ 1      │ Flow descriptions improve documentation and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-flow-description │
+│ get-record-all-fields    │ warning  │ recordLookups │ Loan_Application_Id │ 28   │ 11     │ Retrieving all fields harms performance and security        │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ inactive-flow            │ warning  │ status        │ Acive               │ 89   │ 3      │ Inactive Flows should be deleted or archived                │ https://flow-scanner.github.io/lightning-flow-scanner/#inactive-flow            │
+│ missing-fault-path       │ warning  │ recordLookups │ Loan_Application_Id │ 28   │ 11     │ Fault Paths enable graceful error handling                  │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+└──────────────────────────┴──────────┴───────────────┴─────────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: AxisNanoSanctionLetterFlow (AxisNanoSanctionLetterFlow.flow-meta.xml) (4 results)[22m
+
+Type: Flow
+
+┌───────────────────────────┬──────────┬───────────────┬────────────────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────────────┐
+│ Rule                      │ Severity │ Type          │ Name                       │ Line │ Column │ Message                                                             │ Url                                                                             │
+├───────────────────────────┼──────────┼───────────────┼────────────────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────────────┤
+│ missing-flow-description  │ error    │ description   │ undefined                  │ 1    │ 1      │ Flow descriptions improve documentation and maintainability         │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-flow-description │
+│ invalid-naming-convention │ error    │ name          │ AxisNanoSanctionLetterFlow │ 1    │ 1      │ Consistent naming improves Flow discoverability and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#flow-naming-convention   │
+│ get-record-all-fields     │ warning  │ recordLookups │ Get_Loan_Application       │ 34   │ 11     │ Retrieving all fields harms performance and security                │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields    │
+│ missing-fault-path        │ warning  │ recordLookups │ Get_Loan_Application       │ 34   │ 11     │ Fault Paths enable graceful error handling                          │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path       │
+└───────────────────────────┴──────────┴───────────────┴────────────────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: AxisNanoFlowForRestrictMultiEmployment (AxisNanoFlowForRestrictMultiEmployment.flow-meta.xml) (7 results)[22m
+
+Type: AutoLaunchedFlow
+
+┌───────────────────────────┬──────────┬───────────────┬────────────────────────────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────────────┬───────────────────────────────────────────────────────────────────────────────┐
+│ Rule                      │ Severity │ Type          │ Name                                   │ Line │ Column │ Message                                                             │ Url                                                                           │
+├───────────────────────────┼──────────┼───────────────┼────────────────────────────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────────────┼───────────────────────────────────────────────────────────────────────────────┤
+│ invalid-naming-convention │ error    │ name          │ AxisNanoFlowForRestrictMultiEmployment │ 1    │ 1      │ Consistent naming improves Flow discoverability and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#flow-naming-convention │
+│ get-record-all-fields     │ warning  │ recordLookups │ GetEmploymentRecords                   │ 136  │ 11     │ Retrieving all fields harms performance and security                │ https://flow-scanner.github.io/lightning-flow-scanner/#get-record-all-fields  │
+│ hardcoded-id              │ error    │ formulas      │ FlowScannerHardcodedIdTest             │ 1    │ 1      │ Hardcoded IDs break portability across environments                 │ https://flow-scanner.github.io/lightning-flow-scanner/#hardcoded-id           │
+│ hardcoded-id              │ error    │ formulas      │ FlowScannerHardcodedIdTestTwo          │ 1    │ 1      │ Hardcoded IDs break portability across environments                 │ https://flow-scanner.github.io/lightning-flow-scanner/#hardcoded-id           │
+│ missing-fault-path        │ warning  │ recordLookups │ GetEmploymentRecords                   │ 136  │ 11     │ Fault Paths enable graceful error handling                          │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-fault-path     │
+│ unspecified-trigger-order │ note     │ TriggerOrder  │ TriggerOrder                           │ 1    │ 1      │ Trigger Order ensures predictable execution sequence                │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-trigger-order  │
+│ unused-variable           │ warning  │ formulas      │ FlowScannerHardcodedIdTestTwo          │ 110  │ 11     │ Unused variables add clutter and hurt maintainability               │ https://flow-scanner.github.io/lightning-flow-scanner/#unused-variable        │
+└───────────────────────────┴──────────┴───────────────┴────────────────────────────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────────────┴───────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mFlow: AccountActive (AccountActive.flow-meta.xml) (5 results)[22m
+
+Type: AutoLaunchedFlow
+
+┌───────────────────────────┬──────────┬───────────────┬──────────────────┬──────┬────────┬─────────────────────────────────────────────────────────────────────┬──────────────────────────────────────────────────────────────────────────────────┐
+│ Rule                      │ Severity │ Type          │ Name             │ Line │ Column │ Message                                                             │ Url                                                                              │
+├───────────────────────────┼──────────┼───────────────┼──────────────────┼──────┼────────┼─────────────────────────────────────────────────────────────────────┼──────────────────────────────────────────────────────────────────────────────────┤
+│ missing-flow-description  │ error    │ description   │ undefined        │ 1    │ 1      │ Flow descriptions improve documentation and maintainability         │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-flow-description  │
+│ invalid-naming-convention │ error    │ name          │ AccountActive    │ 1    │ 1      │ Consistent naming improves Flow discoverability and maintainability │ https://flow-scanner.github.io/lightning-flow-scanner/#flow-naming-convention    │
+│ inactive-flow             │ warning  │ status        │ Acitvs           │ 50   │ 3      │ Inactive Flows should be deleted or archived                        │ https://flow-scanner.github.io/lightning-flow-scanner/#inactive-flow             │
+│ same-record-field-updates │ warning  │ recordUpdates │ Update_Records_1 │ 28   │ 11     │ Before-save Flows can update $Record directly                       │ https://flow-scanner.github.io/lightning-flow-scanner/#same-record-field-updates │
+│ unspecified-trigger-order │ note     │ TriggerOrder  │ TriggerOrder     │ 1    │ 1      │ Trigger Order ensures predictable execution sequence                │ https://flow-scanner.github.io/lightning-flow-scanner/#missing-trigger-order     │
+└───────────────────────────┴──────────┴───────────────┴──────────────────┴──────┴────────┴─────────────────────────────────────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────────┘
+
+
+[2m=== [22m[1mTotal: 63 Results in 8 Flows.[22m
+
+- error: 12
+- warning: 48
+- note: 3
+

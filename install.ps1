@@ -1,269 +1,36 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-    Governance Tracker Installer
+    Launcher: runs install-mac.ps1 (Mac/Linux) or install-windows.ps1 (Windows).
 
 .DESCRIPTION
-    Installs required dependencies:
-    - Git
-    - PowerShell Core (pwsh)
-    - Node.js
-    - Salesforce CLI (sf)
-    - Java
-    - Salesforce CLI plugins (@salesforce/sfdx-scanner, lightning-flow-scanner)
-    Extracts scripts.zip and optionally runs Submit-PR.ps1
-
-.PARAMETER RunSubmitPR
-    If provided, runs Submit-PR.ps1 after installation.
+    Detects OS and invokes the appropriate installer.
+    - Mac/Linux: install-mac.ps1 (includes Java)
+    - Windows: install-windows.ps1 (run install-java-windows.ps1 separately for PMD)
 #>
 
-param(
-    [switch]$RunSubmitPR
-)
+param([switch]$RunSubmitPR)
 
-$ErrorActionPreference = "Stop"
+$repoRoot = $PSScriptRoot
+if ([string]::IsNullOrEmpty($repoRoot)) { $repoRoot = (Get-Location).Path }
 
-# ------------------------------
-# OS DETECTION
-# ------------------------------
-$ScriptIsWindows = $env:OS -eq "Windows_NT"
-$ScriptIsMacOS = $false
-$ScriptIsLinux = $false
+$isWin = $env:OS -eq "Windows_NT"
 
-if (-not $ScriptIsWindows) {
-    try {
-        $uname = (uname -s 2>$null)
-        if ($uname -eq "Darwin") { $ScriptIsMacOS = $true }
-        elseif ($uname -eq "Linux") { $ScriptIsLinux = $true }
-    } catch {}
-}
-
-$RepoRoot = $PSScriptRoot
-if ([string]::IsNullOrEmpty($RepoRoot)) {
-    $RepoRoot = (Get-Location).Path
-}
-
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Governance Tracker Installer" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Repo: $RepoRoot" -ForegroundColor Gray
-Write-Host ""
-
-# ------------------------------
-# HELPER FUNCTION
-# ------------------------------
-function Test-CommandExists {
-    param([string]$Command)
-    return $null -ne (Get-Command $Command -ErrorAction SilentlyContinue)
-}
-
-# ------------------------------
-# 1. GIT
-# ------------------------------
-Write-Host "[1/7] Checking Git..." -ForegroundColor Cyan
-if (-not (Test-CommandExists "git")) {
-    if ($ScriptIsMacOS -and (Test-CommandExists "brew")) { brew install git }
-    elseif ($ScriptIsLinux -and (Test-CommandExists "apt-get")) { sudo apt-get install -y git }
-    elseif ($ScriptIsWindows -and (Test-CommandExists "winget")) { winget install --id Git.Git -e }
-}
-Write-Host "  ✅ Git Ready" -ForegroundColor Green
-
-# ------------------------------
-# 2. POWERSHELL
-# ------------------------------
-Write-Host "[2/7] Checking PowerShell (pwsh)..." -ForegroundColor Cyan
-if (-not (Test-CommandExists "pwsh")) {
-    if ($ScriptIsMacOS -and (Test-CommandExists "brew")) { brew install powershell }
-    elseif ($ScriptIsLinux -and (Test-CommandExists "apt-get")) { sudo apt-get install -y powershell }
-    elseif ($ScriptIsWindows -and (Test-CommandExists "winget")) { winget install Microsoft.PowerShell -e }
-}
-Write-Host "  ✅ PowerShell Ready" -ForegroundColor Green
-
-# ------------------------------
-# 3. NODE
-# ------------------------------
-Write-Host "[3/7] Checking Node.js..." -ForegroundColor Cyan
-if (-not (Test-CommandExists "node")) {
-    if ($ScriptIsMacOS -and (Test-CommandExists "brew")) { brew install node }
-    elseif ($ScriptIsLinux -and (Test-CommandExists "apt-get")) { sudo apt-get install -y nodejs }
-    elseif ($ScriptIsWindows -and (Test-CommandExists "winget")) { winget install OpenJS.NodeJS.LTS -e }
-}
-Write-Host "  ✅ Node Ready" -ForegroundColor Green
-
-# ------------------------------
-# 3.5 INSTALL PROJECT NPM DEPENDENCIES
-# ------------------------------
-Write-Host "[3.5/7] Installing project npm dependencies..." -ForegroundColor Cyan
-
-$packageJsonPath = Join-Path $RepoRoot "package.json"
-
-if (Test-Path $packageJsonPath) {
-    Write-Host "  📦 package.json found. Running npm install..." -ForegroundColor Yellow
-    
-    Push-Location $RepoRoot
-    npm install
-    Pop-Location
-
-    Write-Host "  ✅ npm dependencies installed." -ForegroundColor Green
-}
-else {
-    Write-Host "  ℹ️ No package.json found. Skipping npm install." -ForegroundColor DarkGray
-}
-
-# ------------------------------
-# 4. SALESFORCE CLI
-# ------------------------------
-Write-Host "[4/7] Checking Salesforce CLI..." -ForegroundColor Cyan
-if (-not (Test-CommandExists "sf")) {
-    npm install -g @salesforce/cli
-}
-Write-Host "  ✅ Salesforce CLI Ready" -ForegroundColor Green
-
-# ------------------------------
-# 5. JAVA
-# ------------------------------
-Write-Host "[5/7] Checking Java..." -ForegroundColor Cyan
-try { $null = java -version 2>$null }
-catch {
-    if ($ScriptIsMacOS -and (Test-CommandExists "brew")) { brew install openjdk }
-    elseif ($ScriptIsLinux -and (Test-CommandExists "apt-get")) { sudo apt-get install -y openjdk-17-jdk }
-    elseif ($ScriptIsWindows -and (Test-CommandExists "winget")) { winget install Microsoft.OpenJDK.17 -e }
-}
-Write-Host "  ✅ Java Ready" -ForegroundColor Green
-
-# ------------------------------
-# 6. SALESFORCE CLI PLUGINS
-# ------------------------------
-Write-Host "[6/7] Ensuring Salesforce CLI plugins are up to date..." -ForegroundColor Cyan
-
-$pluginResults = @()
-
-function Ensure-Plugin {
-    param([string]$PluginName)
-
-    $exists = sf plugins 2>$null | Select-String $PluginName
-
-    Write-Host "  🔄 Ensuring latest version of $PluginName..." -ForegroundColor Yellow
-    sf plugins install $PluginName --force 2>$null
-
-    $pluginResults += [PSCustomObject]@{
-        Plugin = $PluginName
-        Action = $( if ($exists) { "Reinstalled (Updated)" } else { "Installed" } )
-        Status = "Success"
-    }
-}
-
-# Allow unsigned plugin (Flow Scanner)
-$sfConfigDir = if ($env:XDG_CONFIG_HOME) {
-    Join-Path $env:XDG_CONFIG_HOME "sf"
+if ($isWin) {
+    $scriptPath = Join-Path $repoRoot "install-windows.ps1"
 } else {
-    Join-Path $env:HOME ".config/sf"
+    $scriptPath = Join-Path $repoRoot "install-mac.ps1"
 }
 
-$allowlistPath = Join-Path $sfConfigDir "unsignedPluginAllowList.json"
-
-if (-not (Test-Path $sfConfigDir)) {
-    New-Item -ItemType Directory -Force -Path $sfConfigDir | Out-Null
+if (-not (Test-Path $scriptPath)) {
+    Write-Host "ERROR: Install script not found at $scriptPath" -ForegroundColor Red
+    exit 1
 }
 
-$allowlist = @()
-if (Test-Path $allowlistPath) {
-    try { $allowlist = Get-Content $allowlistPath -Raw | ConvertFrom-Json }
-    catch { $allowlist = @() }
-}
-if ($allowlist -isnot [array]) { $allowlist = @($allowlist) }
-
-if ("lightning-flow-scanner" -notin $allowlist) {
-    $allowlist += "lightning-flow-scanner"
-    $allowlist | ConvertTo-Json | Set-Content $allowlistPath
-}
-
-Ensure-Plugin "@salesforce/sfdx-scanner"
-Ensure-Plugin "lightning-flow-scanner"
-
-# ------------------------------
-# 7. EXTRACT scripts.zip
-# ------------------------------
-Write-Host "[7/7] Extracting scripts.zip..." -ForegroundColor Cyan
-
-$zipPath = Join-Path $RepoRoot "scripts.zip"
-
-if (-not (Test-Path $zipPath)) {
-    if (Test-Path (Join-Path $RepoRoot "scripts")) {
-        Write-Host "  ℹ️ scripts.zip not found, but scripts folder already exists. Skipping extraction." -ForegroundColor Yellow
-    }
-    else {
-        Write-Host "  ❌ scripts.zip not found and scripts folder missing." -ForegroundColor Red
-        exit 1
-    }
-}
-else {
-    $tempExtract = Join-Path $RepoRoot ".install-temp"
-    if (Test-Path $tempExtract) { Remove-Item $tempExtract -Recurse -Force }
-
-    Expand-Archive -Path $zipPath -DestinationPath $tempExtract -Force
-
-    $extracted = Join-Path $tempExtract "scripts"
-    if (-not (Test-Path $extracted)) {
-        $extracted = Join-Path $tempExtract "Scripts"
-    }
-
-    Move-Item -Path $extracted -Destination $RepoRoot -Force
-    Remove-Item $tempExtract -Recurse -Force -ErrorAction SilentlyContinue
-
-    Write-Host "  ✅ Scripts Extracted" -ForegroundColor Green
-}
-
-# ------------------------------
-# FINAL SUMMARY
-# ------------------------------
+$osName = "Mac/Linux"
+if ($isWin) { $osName = "Windows" }
+Write-Host "Running installer for $osName..." -ForegroundColor Cyan
 Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  INSTALLATION SUMMARY" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
 
-$summary = @()
-
-$summary += [PSCustomObject]@{
-    Component = "Git"
-    Status = $( if (Test-CommandExists "git") { "Available" } else { "Missing" } )
-}
-
-$summary += [PSCustomObject]@{
-    Component = "PowerShell (pwsh)"
-    Status = $( if (Test-CommandExists "pwsh") { "Available" } else { "Missing" } )
-}
-
-$summary += [PSCustomObject]@{
-    Component = "Node.js"
-    Status = $( if (Test-CommandExists "node") { "Available" } else { "Missing" } )
-}
-
-$summary += [PSCustomObject]@{
-    Component = "Salesforce CLI"
-    Status = $( if (Test-CommandExists "sf") { "Available" } else { "Missing" } )
-}
-
-$summary += [PSCustomObject]@{
-    Component = "Java"
-    Status = $( if (Test-CommandExists "java") { "Available" } else { "Missing" } )
-}
-
-$summary | Format-Table -AutoSize
-
-Write-Host ""
-Write-Host "Plugin Actions:" -ForegroundColor Yellow
-$pluginResults | Format-Table -AutoSize
-
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Installation Complete!" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
-
-if ($RunSubmitPR) {
-    Write-Host ""
-    Write-Host "Running Submit-PR.ps1..." -ForegroundColor Cyan
-    & pwsh -File (Join-Path $RepoRoot "Submit-PR.ps1")
-    exit $LASTEXITCODE
-}
+& $scriptPath -RunSubmitPR:$RunSubmitPR
+exit $LASTEXITCODE

@@ -22,7 +22,7 @@ fi
 
 # 3. Install PowerShell
 echo "Installing PowerShell..."
-brew install --cask powershell
+brew install powershell
 
 echo "--- SETUP COMPLETE ---"
 echo "Please restart your terminal or run 'source ~/.zshrc'"

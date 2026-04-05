@@ -3,3 +3,8 @@
 node_modules
 coverage
 .env
+.governance.local.json
+Final Docs to be shared
+package-lock.json
+.DS_Store
+Mayurs_CodeBase

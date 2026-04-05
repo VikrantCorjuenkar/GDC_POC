@@ -4,9 +4,10 @@ Param(
     [string]$scanMode = "F"
 )
 
+. (Join-Path $PSScriptRoot "_flowScanCsv.ps1")
+
 # Global counter to track total violations across all scans
 $global:TotalViolations = 0
-$deltaFolder = "changed-sources"
 
 # --- HELPER FUNCTION: Get Git Author ---
 function Get-GitAuthor {
@@ -30,53 +31,7 @@ function Get-GitAuthor {
     }
 }
 
-# --- HELPER FUNCTION: Get Unpushed Files ---
-function Get-UnpushedFiles {
-
-    Write-Host "🔍 Detecting unpushed files..." -ForegroundColor Cyan
-
-    $currentBranch = git rev-parse --abbrev-ref HEAD
-
-    # Fetch latest remote state
-    git fetch origin $currentBranch 2>$null
-
-    # Get files different from remote branch
-    $files = git diff --name-only origin/$currentBranch
-
-    # Filter only force-app files
-    $filtered = $files | Where-Object { $_ -like "force-app/*" }
-
-    return $filtered
-}
-
-# --- HELPER FUNCTION: Create Delta Folder ---
-function Create-DeltaFolder {
-    param (
-        [array]$Files
-    )
-
-    if (Test-Path $deltaFolder) {
-        Remove-Item $deltaFolder -Recurse -Force
-    }
-
-    New-Item -ItemType Directory -Path $deltaFolder | Out-Null
-
-    foreach ($file in $Files) {
-
-        $destinationPath = Join-Path $deltaFolder $file
-        $destinationDir = Split-Path $destinationPath -Parent
-
-        if (-not (Test-Path $destinationDir)) {
-            New-Item -ItemType Directory -Force -Path $destinationDir | Out-Null
-        }
-
-        Copy-Item $file $destinationPath -Force
-    }
-
-    Write-Host "📂 Delta folder created at ./$deltaFolder" -ForegroundColor Green
-}
-
-# --- HELPER FUNCTION: Run Scan & Enrich ---
+# --- HELPER FUNCTION: Run Scan & Enrich with Author ---
 function Run-ScanAndEnrich {
     param (
         [string]$ScanType,
@@ -167,17 +122,17 @@ function Run-ScanAndEnrich {
     }
 }
 
-# --- MAIN EXECUTION ---
+# --- MAIN SCRIPT EXECUTION ---
 
-Write-Host "🚀 Starting Delta Code Scan..." -ForegroundColor Cyan
+Write-Host "🚀 Starting Code Scan with Git Blame Integration..." -ForegroundColor Cyan
 
-# Clean old results
-if (Test-Path "./scanResults/") {
+# 1. Clean up old results
+if (Test-Path -Path "./scanResults/") {
     Remove-Item "./scanResults/" -Recurse -Force
 }
 New-Item -ItemType Directory -Force -Path "./scanResults" | Out-Null
 
-# Determine Ruleset
+# 2. Determine Ruleset
 if ($scanMode -eq 'F') {
     $pmdRuleSet = "./scripts/pmd/rulesets/full_scan.xml"
     Write-Host "   Mode: FULL SCAN" -ForegroundColor Yellow
@@ -188,7 +143,7 @@ else {
     New-Item -ItemType Directory -Force -Path "./scripts/pmd/results" | Out-Null
 }
 
-# Add Custom Rules
+# 3. Add Custom Rules (if present)
 if (Test-Path "./scripts/pmd/category/xml/xml_custom_rules.xml") {
     sf scanner rule add --language xml --path "./scripts/pmd/category/xml/xml_custom_rules.xml" 2>$null
 }
@@ -196,53 +151,55 @@ if (Test-Path "./scripts/pmd/category/apex/apex_custom_rules.xml") {
     sf scanner rule add --language apex --path "./scripts/pmd/category/apex/apex_custom_rules.xml" 2>$null
 }
 
-# Fix Config.json
+# 4. Fix Config.json
 $configPath = "$HOME/.sfdx-scanner/Config.json"
 if (Test-Path $configPath) {
     (Get-Content $configPath).Replace('!**/*-meta.xml', '**/*-meta.xml') | Set-Content $configPath
 }
 
-# Get Changed Files
-$changedFiles = Get-UnpushedFiles
+# --- EXECUTE SCANS ---
 
-if (-not $changedFiles -or $changedFiles.Count -eq 0) {
-    Write-Host "✅ No unpushed Salesforce changes detected. Skipping scans." -ForegroundColor Green
-    exit 0
-}
-
-Write-Host "📂 Files to include in delta:" -ForegroundColor Cyan
-$changedFiles | ForEach-Object { Write-Host "   - $_" }
-
-# Create Delta Folder
-Create-DeltaFolder -Files $changedFiles
-
-# --- RUN SCANS ON DELTA FOLDER ---
-
+# A. Run Apex PMD
 Run-ScanAndEnrich -ScanType "Apex PMD" `
-    -Target "./changed-sources/force-app/" `
+    -Target "./force-app/" `
     -Engine "pmd" `
     -ConfigFile $pmdRuleSet `
     -OutCsvPath "./scanResults/Apex_PMD_codescan.csv"
 
+# B. Run JS ESLint
 Run-ScanAndEnrich -ScanType "JS ESLint" `
-    -Target "./changed-sources/force-app/**/*.js" `
+    -Target "./force-app/**/*.js" `
     -Engine "eslint-lwc" `
     -ConfigFile "./scripts/eslint/.eslintrc.json" `
     -OutCsvPath "./scanResults/JS_ESLint_codescan.csv"
 
+# C. Run Flow Scan
 Write-Host "🔎 Executing Flow Scan..." -ForegroundColor Yellow
-sf flow scan -d "./changed-sources/force-app/" | Out-File "./scanResults/flowScan.json"
+$flowReportPath = "./scanResults/flowScan.json"
+$flowCsvPath = "./scanResults/Flow_codescan.csv"
+sf flow scan -d "./force-app/" 2>&1 | Out-File -FilePath $flowReportPath -Encoding UTF8
+$flowRows = @(Get-FlowScannerErrorRows -FlowReportPath $flowReportPath)
+if ($flowRows.Count -gt 0) {
+    $flowRows | ForEach-Object {
+        [PSCustomObject]@{
+            "Date Reported" = Get-Date -Format "yyyy-MM-dd"
+            "Project"       = $projectName
+            "Severity"      = $_.Severity
+            "Rule"          = $_.Rule
+            "Category"      = $_.Category
+            "Line"          = $_.Line
+            "File"          = $_.File
+            "Message"       = $_.Message
+        }
+    } | Export-Csv -Path $flowCsvPath -NoTypeInformation
+    Write-Host "   ℹ️ Saved $($flowRows.Count) flow error finding(s) to: $flowCsvPath" -ForegroundColor DarkGray
+}
 
 Write-Host "✅ Scans Complete." -ForegroundColor Green
 
-# Cleanup Delta Folder
-if (Test-Path $deltaFolder) {
-    Remove-Item $deltaFolder -Recurse -Force
-    Write-Host "🧹 Cleaned up delta folder." -ForegroundColor DarkGray
-}
 # --- COPY TO GOOGLE DRIVE ---
 # IMPORTANT: Update this path to your exact Google Drive location
-$DrivePath = "/Users/vcorjuenkar/Google Drive/GDC PMD violations Report"
+$DrivePath = "/Users/ujjwal.rawat/Google Drive/GDC PMD violations Report"
 
 if (Test-Path $DrivePath) {
     Write-Host "📂 Syncing to Google Drive..." -ForegroundColor Cyan
@@ -262,6 +219,6 @@ if (Test-Path $DrivePath) {
 
 # --- EXIT WITH ERROR IF VIOLATIONS WERE FOUND ---
 if ($global:TotalViolations -gt 0) {
-    Write-Host "⛔ FATAL: $global:TotalViolations violations found." -ForegroundColor Red
+    Write-Host "⛔ FATAL: $global:TotalViolations violations found across all scans." -ForegroundColor Red
     exit 1
 }
