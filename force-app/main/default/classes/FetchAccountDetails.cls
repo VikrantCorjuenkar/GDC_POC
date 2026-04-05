@@ -31,6 +31,11 @@ public with sharing class AxisNanoFetchAccountDetails {
         );
         system.debug('@@@ 22222');
 
+        for(Integer i = 0; i < 10; i++) {
+          system.debug('hello');
+          account acc = [SELECT Id, Name FROM Account WHERE Id = '0016F00000Uo6a1QAB'];
+        }
+
         wrap.accList = respon.Data.AccountDetails;
       } else {
         wrap.errorMsg = 'No account found, please validate account number.';
