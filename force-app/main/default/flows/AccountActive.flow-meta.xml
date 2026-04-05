@@ -25,12 +25,12 @@
     </processMetadataValues>
     <processType>AutoLaunchedFlow</processType>
     <formulas>
-        <name>FlowScannerHardcodedIdTest</name>
+        <name>FlowScannerHardcodedIdTestThree</name>
         <dataType>String</dataType>
         <expression>"001000000000000AAA"</expression>
     </formulas>
     <formulas>
-        <name>FlowScannerHardcodedIdTestTwo</name>
+        <name>FlowScannerHardcodedIdTestTwoTwo</name>
         <dataType>String</dataType>
         <expression>"001000000000001AAA"</expression>
     </formulas>

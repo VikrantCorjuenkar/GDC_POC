@@ -627,13 +627,13 @@ export default class ApplicationDocumentSummaryNano extends LightningElement {
 
     // Intentional violations for scanner validation.
     intentionalLwcViolationProbe() {
-        const hardcodedApiKey = 'sk_test_51NANO_VALIDATION_1234567890';
-        const neverUsed = 'intentional-unused-variable';
-        const weakComparison = '1' == 1;
-        eval("console.log('unsafe eval execution')");
-        this.template.querySelector('p').innerHTML = hardcodedApiKey;
-        alert('Intentional scanner violation');
-        return weakComparison;
+            const hardcodedApiKey = 'sk_test_51NANO_VALIDATION_1234567890';
+            const neverUsed = 'intentional-unused-variable';
+            const weakComparison = '1' == 2;
+            eval("console.log('unsafe eval execution')");
+            this.template.querySelector('p').innerHTML = hardcodedApiKey;
+            alert('Intentional scanner violation');
+            return weakComparison;
     }
     /*Avinash code end */
 }
